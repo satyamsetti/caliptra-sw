@@ -69,6 +69,16 @@ impl<'a> ImageVerificationEnv for &mut RomImageVerificationEnv<'a> {
         self.ecc384.verify(&pub_key, &digest, &sig)
     }
 
+    fn lms_verify(
+        &self,
+        _digest: &ImageDigest,
+        _pub_key: &ImageLmsPublicKey,
+        _sig: &ImageLmsSignature,
+    ) -> CaliptraResult<bool> {
+        // TODO: Hook with LMS verification logic.
+        Ok(true)
+    }
+
     /// Retrieve Vendor Public Key Digest
     fn vendor_pub_key_digest(&self) -> ImageDigest {
         self.soc_ifc.fuse_bank().vendor_pub_key_hash().into()

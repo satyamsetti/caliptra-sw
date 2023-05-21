@@ -212,7 +212,7 @@ impl ImageManifest {
 
     /// Returns the `Range<u32>` containing the specified vendor public key,
     /// or an empty range if the index is invalid.
-    pub fn vendor_pub_key_range(vendor_ecc_pub_key_idx: u32) -> Range<u32> {
+    pub fn vendor_ecc_pub_key_range(vendor_ecc_pub_key_idx: u32) -> Range<u32> {
         if vendor_ecc_pub_key_idx > VENDOR_ECC_KEY_COUNT {
             return 0..0;
         }
@@ -221,15 +221,14 @@ impl ImageManifest {
         let range = Self::vendor_pub_keys_range();
 
         // Sanity check
-        // TODO: can remove this when LMS keys are added
-        if range.len() as u32 != VENDOR_ECC_KEY_COUNT * pub_key_size {
+        if (range.len() as u32) < VENDOR_ECC_KEY_COUNT * pub_key_size {
             return 0..0;
         }
 
         let offset = (offset_of!(ImageVendorPubKeys, ecc_pub_keys) as u32)
             + vendor_ecc_pub_key_idx * pub_key_size;
 
-        range.start + offset..range.len() as u32 + offset
+        range.start + offset..range.start + offset + pub_key_size
     }
 
     /// Returns `Range<u32>` containing the owner public key
@@ -256,12 +255,14 @@ impl ImageManifest {
 #[derive(AsBytes, FromBytes, Default, Debug, Clone, Copy)]
 pub struct ImageVendorPubKeys {
     pub ecc_pub_keys: [ImageEccPubKey; VENDOR_ECC_KEY_COUNT as usize],
+    pub lms_pub_keys: [ImageLmsPublicKey; VENDOR_LMS_KEY_COUNT as usize],
 }
 
 #[repr(C)]
 #[derive(AsBytes, FromBytes, Default, Debug, Clone, Copy)]
 pub struct ImageVendorPrivKeys {
     pub ecc_priv_keys: [ImageEccPrivKey; VENDOR_ECC_KEY_COUNT as usize],
+    pub lms_priv_keys: [ImageLmsPrivKey; VENDOR_LMS_KEY_COUNT as usize],
 }
 
 #[repr(C)]
@@ -280,7 +281,7 @@ pub struct ImageOwnerPrivKeys {
 #[derive(AsBytes, FromBytes, Default, Debug)]
 pub struct ImageSignatures {
     pub ecc_sig: ImageEccSignature,
-    // TODO: Add LMS Signature here
+    pub lms_sig: ImageLmsSignature,
 }
 
 /// Calipatra Image Bundle Preamble
@@ -292,6 +293,9 @@ pub struct ImagePreamble {
 
     /// Vendor ECC Public Key Index
     pub vendor_ecc_pub_key_idx: u32,
+
+    /// Vendor LMS Public Key Index
+    pub vendor_lms_pub_key_idx: u32,
 
     /// Vendor Signatures
     pub vendor_sigs: ImageSignatures,
@@ -324,6 +328,9 @@ pub struct ImageHeader {
 
     /// Vendor ECC Public Key Index
     pub vendor_ecc_pub_key_idx: u32,
+
+    /// Vendor LMS Public Key Index
+    pub vendor_lms_pub_key_idx: u32,
 
     /// Flags
     pub flags: u32,

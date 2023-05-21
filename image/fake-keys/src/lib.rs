@@ -206,6 +206,12 @@ pub const VENDOR_PUBLIC_KEYS: ImageVendorPubKeys = ImageVendorPubKeys {
         VENDOR_KEY_2_PUBLIC,
         VENDOR_KEY_3_PUBLIC,
     ],
+    lms_pub_keys: [
+        VENDOR_LMS_KEY0_PUBLIC,
+        VENDOR_LMS_KEY1_PUBLIC,
+        VENDOR_LMS_KEY2_PUBLIC,
+        VENDOR_LMS_KEY3_PUBLIC,
+    ],
 };
 
 pub const VENDOR_PRIVATE_KEYS: ImageVendorPrivKeys = ImageVendorPrivKeys {
@@ -215,11 +221,18 @@ pub const VENDOR_PRIVATE_KEYS: ImageVendorPrivKeys = ImageVendorPrivKeys {
         VENDOR_KEY_2_PRIVATE,
         VENDOR_KEY_3_PRIVATE,
     ],
+    lms_priv_keys: [
+        VENDOR_LMS_KEY0_PRIVATE,
+        VENDOR_LMS_KEY1_PRIVATE,
+        VENDOR_LMS_KEY2_PRIVATE,
+        VENDOR_LMS_KEY3_PRIVATE,
+    ],
 };
 
 pub const VENDOR_CONFIG_KEY_0: ImageGeneratorVendorConfig = ImageGeneratorVendorConfig {
     pub_keys: VENDOR_PUBLIC_KEYS,
     ecc_key_idx: 0,
+    lms_key_idx: 0,
     priv_keys: Some(VENDOR_PRIVATE_KEYS),
     not_before: [0u8; 15],
     not_after: [0u8; 15],
@@ -227,16 +240,19 @@ pub const VENDOR_CONFIG_KEY_0: ImageGeneratorVendorConfig = ImageGeneratorVendor
 
 pub const VENDOR_CONFIG_KEY_1: ImageGeneratorVendorConfig = ImageGeneratorVendorConfig {
     ecc_key_idx: 1,
+    lms_key_idx: 1,
     ..VENDOR_CONFIG_KEY_0
 };
 
 pub const VENDOR_CONFIG_KEY_2: ImageGeneratorVendorConfig = ImageGeneratorVendorConfig {
     ecc_key_idx: 2,
+    lms_key_idx: 2,
     ..VENDOR_CONFIG_KEY_0
 };
 
 pub const VENDOR_CONFIG_KEY_3: ImageGeneratorVendorConfig = ImageGeneratorVendorConfig {
     ecc_key_idx: 3,
+    lms_key_idx: 3,
     ..VENDOR_CONFIG_KEY_0
 };
 
