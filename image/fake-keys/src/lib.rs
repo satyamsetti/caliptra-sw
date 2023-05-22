@@ -7,11 +7,11 @@ use caliptra_image_types::{
 };
 
 #[cfg(test)]
+use std::fs;
+#[cfg(test)]
 use std::io::Write; // bring trait into scope
 #[cfg(test)]
 use zerocopy::AsBytes;
-#[cfg(test)]
-use std::fs;
 
 /// Generated with
 ///
@@ -282,10 +282,14 @@ fn test_write_lms_keys() {
         lms_priv_key.tree_type = u32::to_be(lms_priv_key.tree_type);
         lms_priv_key.otstype = u32::to_be(lms_priv_key.otstype);
         let mut file = fs::OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open(format!("../../target/riscv32imc-unknown-none-elf/firmware/vnd-lms-priv-key-{}.pem", i)).unwrap();
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(format!(
+                "../../target/riscv32imc-unknown-none-elf/firmware/vnd-lms-priv-key-{}.pem",
+                i
+            ))
+            .unwrap();
         file.write_all(lms_priv_key.as_bytes()).unwrap();
     }
     for i in 0..VENDOR_PUBLIC_KEYS.lms_pub_keys.len() {
@@ -293,10 +297,14 @@ fn test_write_lms_keys() {
         lms_pub_key.tree_type = u32::to_be(lms_pub_key.tree_type);
         lms_pub_key.otstype = u32::to_be(lms_pub_key.otstype);
         let mut file = fs::OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open(format!("../../target/riscv32imc-unknown-none-elf/firmware/vnd-lms-pub-key-{}.pem", i)).unwrap();
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(format!(
+                "../../target/riscv32imc-unknown-none-elf/firmware/vnd-lms-pub-key-{}.pem",
+                i
+            ))
+            .unwrap();
         file.write_all(lms_pub_key.as_bytes()).unwrap();
     }
 }
