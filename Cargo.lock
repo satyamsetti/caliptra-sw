@@ -374,6 +374,7 @@ dependencies = [
  "caliptra-image-gen",
  "caliptra-image-openssl",
  "caliptra-image-types",
+ "zerocopy",
 ]
 
 [[package]]
@@ -395,6 +396,7 @@ dependencies = [
  "caliptra-image-gen",
  "caliptra-image-types",
  "openssl",
+ "zerocopy",
 ]
 
 [[package]]

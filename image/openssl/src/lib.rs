@@ -32,6 +32,8 @@ use openssl::nid::Nid;
 use openssl::rand::rand_bytes;
 use openssl::sha::{Sha256, Sha384};
 
+use zerocopy::FromBytes;
+
 #[derive(Default)]
 pub struct OsslCrypto {}
 
@@ -116,7 +118,7 @@ pub fn ecc_pub_key_from_pem(path: &PathBuf) -> anyhow::Result<ImageEccPubKey> {
 /// Read ECC-384 Private Key from PEM file
 pub fn ecc_priv_key_from_pem(path: &PathBuf) -> anyhow::Result<ImageEccPrivKey> {
     let key_bytes = std::fs::read(path)
-        .with_context(|| format!("Failed to read public key PEM file {}", path.display()))?;
+        .with_context(|| format!("Failed to read private key PEM file {}", path.display()))?;
 
     let key = EcKey::private_key_from_pem(&key_bytes)?;
 
@@ -125,6 +127,34 @@ pub fn ecc_priv_key_from_pem(path: &PathBuf) -> anyhow::Result<ImageEccPrivKey> 
         .to_vec_padded(ECC384_SCALAR_BYTE_SIZE as i32)?;
 
     Ok(to_hw_format(&priv_key))
+}
+
+/// Read LMS SHA192 public Key from PEM file
+pub fn lms_pub_key_from_pem(path: &PathBuf) -> anyhow::Result<ImageLmsPublicKey> {
+    let key_bytes = std::fs::read(path)
+        .with_context(|| format!("Failed to read public key PEM file {}", path.display()))?;
+
+    if let Some(mut key) = ImageLmsPublicKey::read_from(&key_bytes[..]) {
+        key.tree_type = u32::from_be(key.tree_type);
+        key.otstype = u32::from_be(key.otstype);
+        Ok(key)
+    } else {
+        Err(anyhow!("Failed to parse lms pub key"))
+    }
+}
+
+/// Read LMS SHA192 private Key from PEM file
+pub fn lms_priv_key_from_pem(path: &PathBuf) -> anyhow::Result<ImageLmsPrivKey> {
+    let key_bytes = std::fs::read(path)
+        .with_context(|| format!("Failed to read private key PEM file {}", path.display()))?;
+
+    if let Some(mut key) = ImageLmsPrivKey::read_from(&key_bytes[..]) {
+        key.tree_type = u32::from_be(key.tree_type);
+        key.otstype = u32::from_be(key.otstype);
+        Ok(key)
+    } else {
+        Err(anyhow!("Failed to parse lms priv key"))
+    }
 }
 
 /// Convert the slice to hardware format

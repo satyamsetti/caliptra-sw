@@ -64,13 +64,7 @@ impl<Crypto: ImageGeneratorCrypto> ImageGenerator<Crypto> {
 
         // Create Header
         let toc_digest = self.toc_digest(&fmc_toc, &runtime_toc)?;
-        let header = self.gen_header(
-            config,
-            ecc_key_idx,
-            lms_key_idx,
-            Self::DEFAULT_FLAGS,
-            toc_digest,
-        )?;
+        let header = self.gen_header(config, ecc_key_idx, lms_key_idx, Self::DEFAULT_FLAGS, toc_digest)?;
 
         // Create Preamable
         let header_digest = self.header_digest(&header)?;
@@ -117,9 +111,10 @@ impl<Crypto: ImageGeneratorCrypto> ImageGenerator<Crypto> {
                 &config.vendor_config.pub_keys.ecc_pub_keys[ecc_key_idx as usize],
             )?;
             vendor_sigs.ecc_sig = sig;
-            let lms_sig = self
-                .crypto
-                .lms_sign(digest, &priv_keys.lms_priv_keys[lms_key_idx as usize])?;
+            let lms_sig = self.crypto.lms_sign(
+                digest,
+                &priv_keys.lms_priv_keys[lms_key_idx as usize]
+            )?;
             vendor_sigs.lms_sig = lms_sig;
         }
 

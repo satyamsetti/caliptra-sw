@@ -31,7 +31,7 @@ build-emu:
 		--target=riscv32imc-unknown-none-elf \
 		--no-default-features \
 		--features emu \
-		
+
 build-test-fmc:
 	$(RUSTFLAGS) cargo build \
 		--profile firmware \
@@ -59,6 +59,7 @@ build-fw-image: gen-certs build-test-fmc build-test-rt
 		create \
 		--key-config $(TARGET_DIR)/keys.toml \
 		--ecc-pk-idx 3 \
+		--lms-pk-idx 3 \
 		--fmc $(TARGET_DIR)/caliptra-rom-test-fmc \
 		--fmc-svn 0 \
 		--fmc-min-svn 0 \
@@ -68,7 +69,7 @@ build-fw-image: gen-certs build-test-fmc build-test-rt
 		--rt-min-svn 0 \
 		--rt-rev $(GIT_REV) \
 		--out $(TARGET_DIR)/caliptra-rom-test-fw \
-		
+
 bloat: build
 	$(RUSTFLAGS) cargo bloat \
 		--profile firmware \
@@ -127,7 +128,7 @@ size:
 		--profile firmware \
 		--target=riscv32imc-unknown-none-elf \
 		--no-default-features \
-		
+
 nm:
 	$(RUSTFLAGS) cargo nm \
 		--profile firmware \
@@ -138,7 +139,7 @@ nm:
 
 hexdump: objcopy
 	xxd $(TARGET_DIR)/caliptra-rom.bin \
-	
+
 clean:
 	cargo clean
 
