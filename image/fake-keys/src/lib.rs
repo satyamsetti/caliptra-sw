@@ -278,7 +278,7 @@ pub const OWNER_CONFIG: ImageGeneratorOwnerConfig = ImageGeneratorOwnerConfig {
 #[ignore]
 fn test_write_lms_keys() {
     for i in 0..VENDOR_PRIVATE_KEYS.lms_priv_keys.len() {
-        let mut lms_priv_key = VENDOR_PRIVATE_KEYS.lms_priv_keys[i].clone();
+        let mut lms_priv_key = VENDOR_PRIVATE_KEYS.lms_priv_keys[i];
         lms_priv_key.tree_type = u32::to_be(lms_priv_key.tree_type);
         lms_priv_key.otstype = u32::to_be(lms_priv_key.otstype);
         let mut file = fs::OpenOptions::new()
@@ -293,7 +293,7 @@ fn test_write_lms_keys() {
         file.write_all(lms_priv_key.as_bytes()).unwrap();
     }
     for i in 0..VENDOR_PUBLIC_KEYS.lms_pub_keys.len() {
-        let mut lms_pub_key = VENDOR_PRIVATE_KEYS.lms_priv_keys[i].clone();
+        let mut lms_pub_key = VENDOR_PRIVATE_KEYS.lms_priv_keys[i];
         lms_pub_key.tree_type = u32::to_be(lms_pub_key.tree_type);
         lms_pub_key.otstype = u32::to_be(lms_pub_key.otstype);
         let mut file = fs::OpenOptions::new()
