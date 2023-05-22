@@ -83,12 +83,13 @@ impl ImageGeneratorCrypto for OsslCrypto {
     fn lms_sign(
         &self,
         digest: &ImageDigest,
+        q: u32,
         priv_key: &ImageLmsPrivKey,
     ) -> anyhow::Result<ImageLmsSignature> {
         let message: [u8; ECC384_SCALAR_BYTE_SIZE] = from_hw_format(digest);
         let mut nonce = [0u8; SHA192_DIGEST_BYTE_SIZE];
         rand_bytes(&mut nonce).unwrap();
-        sign_with_lms_key(priv_key, &message, &nonce, 0)
+        sign_with_lms_key(priv_key, &message, &nonce, q)
     }
 }
 
@@ -134,13 +135,7 @@ pub fn lms_pub_key_from_pem(path: &PathBuf) -> anyhow::Result<ImageLmsPublicKey>
     let key_bytes = std::fs::read(path)
         .with_context(|| format!("Failed to read public key PEM file {}", path.display()))?;
 
-    if let Some(mut key) = ImageLmsPublicKey::read_from(&key_bytes[..]) {
-        key.tree_type = u32::from_be(key.tree_type);
-        key.otstype = u32::from_be(key.otstype);
-        Ok(key)
-    } else {
-        Err(anyhow!("Failed to parse lms pub key"))
-    }
+    ImageLmsPublicKey::read_from(&key_bytes[..]).ok_or(anyhow!("Error parsing LMS public key"))
 }
 
 /// Read LMS SHA192 private Key from PEM file
@@ -148,13 +143,7 @@ pub fn lms_priv_key_from_pem(path: &PathBuf) -> anyhow::Result<ImageLmsPrivKey> 
     let key_bytes = std::fs::read(path)
         .with_context(|| format!("Failed to read private key PEM file {}", path.display()))?;
 
-    if let Some(mut key) = ImageLmsPrivKey::read_from(&key_bytes[..]) {
-        key.tree_type = u32::from_be(key.tree_type);
-        key.otstype = u32::from_be(key.otstype);
-        Ok(key)
-    } else {
-        Err(anyhow!("Failed to parse lms priv key"))
-    }
+    ImageLmsPrivKey::read_from(&key_bytes[..]).ok_or(anyhow!("Error parsing LMS priv key"))
 }
 
 /// Convert the slice to hardware format
@@ -346,7 +335,7 @@ fn generate_ots_signature_helper(
 ) -> ImageLmOTSSignature {
     let alg_params = Lms::default().get_lmots_parameters(&ots_alg).unwrap();
     let mut sig = ImageLmOTSSignature {
-        otstype: ots_alg as u32,
+        otstype: u32::to_be(ots_alg as u32),
         ..Default::default()
     };
     sig.random.clone_from_slice(rand);
@@ -404,11 +393,11 @@ fn generate_ots_signature_helper(
 
 #[allow(unused)]
 fn generate_lms_pubkey(priv_key: &ImageLmsPrivKey) -> anyhow::Result<ImageLmsPublicKey> {
-    let tree_type = match lookup_lms_algorithm_type(priv_key.tree_type) {
+    let tree_type = match lookup_lms_algorithm_type(u32::from_be(priv_key.tree_type)) {
         Some(x) => x,
         None => return Err(anyhow!("Error looking up lms tree type")),
     };
-    let ots_type = match lookup_lmots_algorithm_type(priv_key.otstype) {
+    let ots_type = match lookup_lmots_algorithm_type(u32::from_be(priv_key.otstype)) {
         Some(x) => x,
         None => return Err(anyhow!("Error looking up lms ots type")),
     };
@@ -439,11 +428,11 @@ fn sign_with_lms_key(
     nonce: &[u8],
     q: u32,
 ) -> anyhow::Result<ImageLmsSignature> {
-    let lms_alg_type = match lookup_lms_algorithm_type(priv_key.tree_type) {
+    let lms_alg_type = match lookup_lms_algorithm_type(u32::from_be(priv_key.tree_type)) {
         Some(x) => x,
         None => return Err(anyhow!("Error looking up lms tree type")),
     };
-    let ots_alg_type = match lookup_lmots_algorithm_type(priv_key.otstype) {
+    let ots_alg_type = match lookup_lmots_algorithm_type(u32::from_be(priv_key.otstype)) {
         Some(x) => x,
         None => return Err(anyhow!("Error looking up lms ots type")),
     };
@@ -463,8 +452,9 @@ fn sign_with_lms_key(
     );
     let mut sig = Some(ImageLmsSignature::default());
     if let Some(x) = sig.as_mut() {
-        x.q = q;
+        x.q = u32::to_be(q);
         x.ots_sig = ots_sig;
+        x.tree_type = priv_key.tree_type;
     }
 
     generate_lms_pubkey_helper(
@@ -483,8 +473,8 @@ fn sign_with_lms_key(
 #[ignore]
 fn test_print_lms_private_pub_key() {
     let mut priv_key: ImageLmsPrivKey = ImageLmsPrivKey {
-        tree_type: LmsAlgorithmType::LmsSha256N24H15 as u32,
-        otstype: LmotsAlgorithmType::LmotsSha256N24W4 as u32,
+        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H15 as u32),
+        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W4 as u32),
         ..Default::default()
     };
     for i in 0..4 {
@@ -506,8 +496,8 @@ fn test_print_lms_private_pub_key() {
 #[test]
 fn test_lms() {
     let priv_key = ImageLmsPrivKey {
-        tree_type: LmsAlgorithmType::LmsSha256N24H5 as u32,
-        otstype: LmotsAlgorithmType::LmotsSha256N24W8 as u32,
+        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H5 as u32),
+        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W8 as u32),
         id: [
             0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d,
             0x2e, 0x2f,
@@ -518,8 +508,8 @@ fn test_lms() {
         ],
     };
     let expected_pub_key = ImageLmsPublicKey {
-        tree_type: LmsAlgorithmType::LmsSha256N24H5 as u32,
-        otstype: LmotsAlgorithmType::LmotsSha256N24W8 as u32,
+        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H5 as u32),
+        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W8 as u32),
         id: priv_key.id,
         digest: [
             0x2c, 0x57, 0x14, 0x50, 0xae, 0xd9, 0x9c, 0xfb, 0x4f, 0x4a, 0xc2, 0x85, 0xda, 0x14,
@@ -533,8 +523,8 @@ fn test_lms() {
 #[test]
 fn test_lms_sig() {
     let priv_key = ImageLmsPrivKey {
-        tree_type: LmsAlgorithmType::LmsSha256N24H5 as u32,
-        otstype: LmotsAlgorithmType::LmotsSha256N24W8 as u32,
+        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H5 as u32),
+        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W8 as u32),
         id: [
             0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d,
             0x2e, 0x2f,
@@ -682,11 +672,12 @@ fn test_lms_sig() {
     ];
     let sig = sign_with_lms_key(&priv_key, &message, &nonce, 5).unwrap();
     let mut expected_sig = ImageLmsSignature {
-        q: 5,
+        q: u32::to_be(5),
         ..Default::default()
     };
 
-    expected_sig.ots_sig.otstype = LmotsAlgorithmType::LmotsSha256N24W8 as u32;
+    expected_sig.tree_type = u32::to_be(LmsAlgorithmType::LmsSha256N24H5 as u32);
+    expected_sig.ots_sig.otstype = u32::to_be(LmotsAlgorithmType::LmotsSha256N24W8 as u32);
     expected_sig.ots_sig.random = nonce;
     assert_eq!(26, expected_ots_sig.len());
     assert_eq!(5, expected_tree_path.len());
@@ -702,8 +693,8 @@ fn test_lms_sig() {
 #[test]
 fn test_lms_sig_h15() {
     let priv_key = ImageLmsPrivKey {
-        tree_type: LmsAlgorithmType::LmsSha256N24H15 as u32,
-        otstype: LmotsAlgorithmType::LmotsSha256N24W4 as u32,
+        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H15 as u32),
+        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W4 as u32),
         id: [
             0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d,
             0x2e, 0x2f,
@@ -713,7 +704,6 @@ fn test_lms_sig_h15() {
             0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
         ],
     };
-    println!("otstype {0}", priv_key.otstype);
     let expected_ots_sig: [[u8; 24]; 51] = [
         [
             0xd0, 0xf3, 0x73, 0xcf, 0x2b, 0x22, 0xe3, 0x6a, 0x23, 0x7d, 0x5c, 0x9d, 0xe8, 0x70,
@@ -993,11 +983,12 @@ fn test_lms_sig_h15() {
     let sig = sign_with_lms_key(&priv_key, &message, &nonce, 5).unwrap();
 
     let mut expected_sig = ImageLmsSignature {
-        q: 5,
+        q: u32::to_be(5),
         ..Default::default()
     };
 
-    expected_sig.ots_sig.otstype = LmotsAlgorithmType::LmotsSha256N24W4 as u32;
+    expected_sig.tree_type = u32::to_be(LmsAlgorithmType::LmsSha256N24H15 as u32);
+    expected_sig.ots_sig.otstype = u32::to_be(LmotsAlgorithmType::LmotsSha256N24W4 as u32);
     expected_sig.ots_sig.random = nonce;
     assert_eq!(51, expected_ots_sig.len());
     assert_eq!(15, expected_tree_path.len());

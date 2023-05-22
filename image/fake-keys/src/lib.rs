@@ -96,8 +96,8 @@ pub const VENDOR_KEY_3_PRIVATE: ImageEccPrivKey = [
     0xbc900c70, 0xb8cb36ac, 0x268b8079, 0xe3aeaaaf,
 ];
 pub const VENDOR_LMS_KEY0_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
-    tree_type: 0x0c,
-    otstype: 0x07,
+    tree_type: 0x0c000000,
+    otstype: 0x07000000,
     id: [
         0xc5, 0x3d, 0x23, 0x9c, 0x09, 0x74, 0xa6, 0xab, 0x9a, 0x6a, 0x86, 0x20, 0x84, 0x7f, 0x7c,
         0xd7,
@@ -108,8 +108,8 @@ pub const VENDOR_LMS_KEY0_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
     ],
 };
 pub const VENDOR_LMS_KEY0_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
-    tree_type: 0x0c,
-    otstype: 0x07,
+    tree_type: 0x0c000000,
+    otstype: 0x07000000,
     id: [
         0xc5, 0x3d, 0x23, 0x9c, 0x09, 0x74, 0xa6, 0xab, 0x9a, 0x6a, 0x86, 0x20, 0x84, 0x7f, 0x7c,
         0xd7,
@@ -121,8 +121,8 @@ pub const VENDOR_LMS_KEY0_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
 };
 
 pub const VENDOR_LMS_KEY1_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
-    tree_type: 0x0c,
-    otstype: 0x07,
+    tree_type: 0x0c000000,
+    otstype: 0x07000000,
     id: [
         0x9b, 0x4d, 0x5e, 0xf7, 0x03, 0x8b, 0x28, 0x10, 0x41, 0xcb, 0x64, 0x86, 0x67, 0xad, 0x42,
         0x44,
@@ -133,8 +133,8 @@ pub const VENDOR_LMS_KEY1_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
     ],
 };
 pub const VENDOR_LMS_KEY1_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
-    tree_type: 0x0c,
-    otstype: 0x07,
+    tree_type: 0x0c000000,
+    otstype: 0x07000000,
     id: [
         0x9b, 0x4d, 0x5e, 0xf7, 0x03, 0x8b, 0x28, 0x10, 0x41, 0xcb, 0x64, 0x86, 0x67, 0xad, 0x42,
         0x44,
@@ -145,8 +145,8 @@ pub const VENDOR_LMS_KEY1_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
     ],
 };
 pub const VENDOR_LMS_KEY2_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
-    tree_type: 0x0c,
-    otstype: 0x07,
+    tree_type: 0x0c000000,
+    otstype: 0x07000000,
     id: [
         0xb8, 0xe5, 0x28, 0xd3, 0x9a, 0x1f, 0xc8, 0x68, 0xca, 0x1b, 0x76, 0xbe, 0x07, 0xac, 0xd8,
         0x04,
@@ -157,8 +157,8 @@ pub const VENDOR_LMS_KEY2_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
     ],
 };
 pub const VENDOR_LMS_KEY2_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
-    tree_type: 0x0c,
-    otstype: 0x07,
+    tree_type: 0x0c000000,
+    otstype: 0x07000000,
     id: [
         0xb8, 0xe5, 0x28, 0xd3, 0x9a, 0x1f, 0xc8, 0x68, 0xca, 0x1b, 0x76, 0xbe, 0x07, 0xac, 0xd8,
         0x04,
@@ -169,8 +169,8 @@ pub const VENDOR_LMS_KEY2_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
     ],
 };
 pub const VENDOR_LMS_KEY3_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
-    tree_type: 0x0c,
-    otstype: 0x07,
+    tree_type: 0x0c000000,
+    otstype: 0x07000000,
     id: [
         0x1e, 0xfa, 0x97, 0x18, 0xeb, 0x6f, 0x09, 0x99, 0x27, 0x37, 0x45, 0x80, 0x11, 0x79, 0x51,
         0x2a,
@@ -181,8 +181,8 @@ pub const VENDOR_LMS_KEY3_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
     ],
 };
 pub const VENDOR_LMS_KEY3_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
-    tree_type: 0x0c,
-    otstype: 0x07,
+    tree_type: 0x0c000000,
+    otstype: 0x07000000,
     id: [
         0x1e, 0xfa, 0x97, 0x18, 0xeb, 0x6f, 0x09, 0x99, 0x27, 0x37, 0x45, 0x80, 0x11, 0x79, 0x51,
         0x2a,
@@ -278,9 +278,6 @@ pub const OWNER_CONFIG: ImageGeneratorOwnerConfig = ImageGeneratorOwnerConfig {
 #[ignore]
 fn test_write_lms_keys() {
     for i in 0..VENDOR_PRIVATE_KEYS.lms_priv_keys.len() {
-        let mut lms_priv_key = VENDOR_PRIVATE_KEYS.lms_priv_keys[i];
-        lms_priv_key.tree_type = u32::to_be(lms_priv_key.tree_type);
-        lms_priv_key.otstype = u32::to_be(lms_priv_key.otstype);
         let mut file = fs::OpenOptions::new()
             .create(true)
             .write(true)
@@ -290,12 +287,9 @@ fn test_write_lms_keys() {
                 i
             ))
             .unwrap();
-        file.write_all(lms_priv_key.as_bytes()).unwrap();
+        file.write_all(VENDOR_PRIVATE_KEYS.lms_priv_keys[i].as_bytes()).unwrap();
     }
     for i in 0..VENDOR_PUBLIC_KEYS.lms_pub_keys.len() {
-        let mut lms_pub_key = VENDOR_PRIVATE_KEYS.lms_priv_keys[i];
-        lms_pub_key.tree_type = u32::to_be(lms_pub_key.tree_type);
-        lms_pub_key.otstype = u32::to_be(lms_pub_key.otstype);
         let mut file = fs::OpenOptions::new()
             .create(true)
             .write(true)
@@ -305,6 +299,6 @@ fn test_write_lms_keys() {
                 i
             ))
             .unwrap();
-        file.write_all(lms_pub_key.as_bytes()).unwrap();
+        file.write_all(VENDOR_PUBLIC_KEYS.lms_pub_keys[i].as_bytes()).unwrap();
     }
 }

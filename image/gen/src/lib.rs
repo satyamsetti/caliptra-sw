@@ -59,6 +59,7 @@ pub trait ImageGeneratorCrypto {
     fn lms_sign(
         &self,
         digest: &ImageDigest,
+        q: u32,
         priv_key: &ImageLmsPrivKey,
     ) -> anyhow::Result<ImageLmsSignature>;
 }
