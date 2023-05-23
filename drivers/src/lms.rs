@@ -338,6 +338,10 @@ impl Lms {
     fn checksum(&self, algo_type: &LmotsAlgorithmType, input_string: &[u8]) -> CaliptraResult<u16> {
         let params = self.get_lmots_parameters(algo_type)?;
         let mut sum = 0u16;
+        let valid_w = matches!(params.w, 1 | 2 | 4 | 8);
+        if !valid_w {
+            raise_err!(InvalidWinternitzParameter)
+        }
         let upper_bound = params.n as u16 * (8 / params.w as u16);
         let bitmask = (1 << params.w) - 1;
         for i in 0..upper_bound as usize {
