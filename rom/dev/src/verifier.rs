@@ -85,72 +85,72 @@ impl<'a> ImageVerificationEnv for &mut RomImageVerificationEnv<'a> {
 
     fn lms_verify(
         &self,
-        _digest: &ImageDigest,
-        _pub_key: &ImageLmsPublicKey,
-        _sig: &ImageLmsSignature,
+        digest: &ImageDigest,
+        pub_key: &ImageLmsPublicKey,
+        sig: &ImageLmsSignature,
     ) -> CaliptraResult<bool> {
-        // let mut message = [0u8; SHA384_DIGEST_BYTE_SIZE];
-        // for i in 0..digest.len() {
-        //     message[i * 4..][..4].copy_from_slice(&digest[i].to_be_bytes());
-        // }
+        let mut message = [0u8; SHA384_DIGEST_BYTE_SIZE];
+        for i in 0..digest.len() {
+            message[i * 4..][..4].copy_from_slice(&digest[i].to_be_bytes());
+        }
 
-        // let q = u32::from_be(sig.q);
+        let q = u32::from_be(sig.q);
 
-        // let tree_type = match lookup_lms_algorithm_type(u32::from_be(sig.tree_type)) {
-        //     Some(x) => x,
-        //     None => raise_err!(InvalidLmsAlgorithmType),
-        // };
-        // let ots_type = match lookup_lmots_algorithm_type(u32::from_be(sig.ots_sig.otstype)) {
-        //     Some(x) => x,
-        //     None => raise_err!(InvalidLmotsAlgorithmType),
-        // };
-        // let (_, height) = Lms::default().get_lms_parameters(&tree_type)?;
-        // if usize::from(height) != IMAGE_LMS_KEY_HEIGHT {
-        //     raise_err!(UnsupportedImageLmsKeyParam)
-        // }
+        let tree_type = match lookup_lms_algorithm_type(u32::from_be(sig.tree_type)) {
+            Some(x) => x,
+            None => raise_err!(InvalidLmsAlgorithmType),
+        };
+        let ots_type = match lookup_lmots_algorithm_type(u32::from_be(sig.ots_sig.otstype)) {
+            Some(x) => x,
+            None => raise_err!(InvalidLmotsAlgorithmType),
+        };
+        let (_, height) = Lms::default().get_lms_parameters(&tree_type)?;
+        if usize::from(height) != IMAGE_LMS_KEY_HEIGHT {
+            raise_err!(UnsupportedImageLmsKeyParam)
+        }
 
-        // let lmots_type = Lms::default().get_lmots_parameters(&ots_type)?;
-        // if usize::from(lmots_type.p) != IMAGE_LMS_OTS_P_PARAM {
-        //     raise_err!(UnsupportedImageLmotsPParam)
-        // }
-        // if usize::from(lmots_type.n) != SHA192_DIGEST_BYTE_SIZE {
-        //     raise_err!(UnsupportedImageLmotsNParam)
-        // }
-        // let lms_public_key: HashValue<SHA192_DIGEST_WORD_SIZE> = HashValue::from(pub_key.digest);
-        // let mut y = [Sha192Digest::default(); IMAGE_LMS_OTS_P_PARAM];
-        // for (i, val) in y.iter_mut().enumerate().take(IMAGE_LMS_OTS_P_PARAM) {
-        //     *val = Sha192Digest::from(sig.ots_sig.sig[i]);
-        // }
+        let lmots_type = Lms::default().get_lmots_parameters(&ots_type)?;
+        if usize::from(lmots_type.p) != IMAGE_LMS_OTS_P_PARAM {
+            raise_err!(UnsupportedImageLmotsPParam)
+        }
+        if usize::from(lmots_type.n) != SHA192_DIGEST_BYTE_SIZE {
+            raise_err!(UnsupportedImageLmotsNParam)
+        }
+        let lms_public_key: HashValue<SHA192_DIGEST_WORD_SIZE> = HashValue::from(pub_key.digest);
+        let mut y = [Sha192Digest::default(); IMAGE_LMS_OTS_P_PARAM];
+        for (i, val) in y.iter_mut().enumerate().take(IMAGE_LMS_OTS_P_PARAM) {
+            *val = Sha192Digest::from(sig.ots_sig.sig[i]);
+        }
 
-        // let mut path = [Sha192Digest::default(); IMAGE_LMS_KEY_HEIGHT];
-        // for (i, val) in path.iter_mut().enumerate().take(IMAGE_LMS_KEY_HEIGHT) {
-        //     *val = Sha192Digest::from(sig.tree_path[i]);
-        // }
+        let mut path = [Sha192Digest::default(); IMAGE_LMS_KEY_HEIGHT];
+        for (i, val) in path.iter_mut().enumerate().take(IMAGE_LMS_KEY_HEIGHT) {
+            *val = Sha192Digest::from(sig.tree_path[i]);
+        }
 
-        // let mut nonce = [0u32; SHA192_DIGEST_WORD_SIZE];
-        // for (i, val) in nonce.iter_mut().enumerate().take(SHA192_DIGEST_WORD_SIZE) {
-        //     *val = u32::from_be_bytes([
-        //         sig.ots_sig.random[i * 4],
-        //         sig.ots_sig.random[i * 4 + 1],
-        //         sig.ots_sig.random[i * 4 + 2],
-        //         sig.ots_sig.random[i * 4 + 3],
-        //     ]);
-        // }
+        let mut nonce = [0u32; SHA192_DIGEST_WORD_SIZE];
+        for (i, val) in nonce.iter_mut().enumerate().take(SHA192_DIGEST_WORD_SIZE) {
+            *val = u32::from_be_bytes([
+                sig.ots_sig.random[i * 4],
+                sig.ots_sig.random[i * 4 + 1],
+                sig.ots_sig.random[i * 4 + 2],
+                sig.ots_sig.random[i * 4 + 3],
+            ]);
+        }
 
-        // let ots = LmotsSignature {
-        //     ots_type: LmotsAlgorithmType::LmotsSha256N24W4,
-        //     nonce,
-        //     y,
-        // };
+        let ots = LmotsSignature {
+            ots_type: LmotsAlgorithmType::LmotsSha256N24W4,
+            nonce,
+            y,
+        };
 
-        // let lms_sig_val = LmsSignature {
-        //     q,
-        //     lmots_signature: ots,
-        //     sig_type: tree_type,
-        //     lms_path: &path,
-        // };
-        // Lms::default().verify_lms_signature(&message, &pub_key.id, q, &lms_public_key, &lms_sig_val)
-        Ok(true)
+        let lms_sig_val = LmsSignature {
+            q,
+            lmots_signature: ots,
+            sig_type: tree_type,
+            lms_path: &path,
+        };
+        Lms::default().verify_lms_signature(&message, &pub_key.id, q, &lms_public_key, &lms_sig_val)
+        // Ok(true)
     }
 
     /// Retrieve Vendor Public Key Digest
