@@ -102,6 +102,9 @@ pub enum CaliptraComponent {
     /// Rom Global Error
     RomGlobal = 0x104,
 
+    /// ROM verifier
+    RomVerifier = 0x105,
+
     /// SHA-256 KAT
     Sha256Kat = 0x9001,
 
