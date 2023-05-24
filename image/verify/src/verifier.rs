@@ -1242,9 +1242,9 @@ mod tests {
 
         fn lms_verify(
             &mut self,
-            digest: &ImageDigest,
-            pub_key: &ImageLmsPublicKey,
-            sig: &ImageLmsSignature,
+            _digest: &ImageDigest,
+            _pub_key: &ImageLmsPublicKey,
+            _sig: &ImageLmsSignature,
         ) -> CaliptraResult<bool> {
             Ok(self.verify_result)
         }
