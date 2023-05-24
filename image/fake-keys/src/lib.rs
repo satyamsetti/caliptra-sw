@@ -287,7 +287,8 @@ fn test_write_lms_keys() {
                 i
             ))
             .unwrap();
-        file.write_all(VENDOR_PRIVATE_KEYS.lms_priv_keys[i].as_bytes()).unwrap();
+        file.write_all(VENDOR_PRIVATE_KEYS.lms_priv_keys[i].as_bytes())
+            .unwrap();
     }
     for i in 0..VENDOR_PUBLIC_KEYS.lms_pub_keys.len() {
         let mut file = fs::OpenOptions::new()
@@ -299,6 +300,7 @@ fn test_write_lms_keys() {
                 i
             ))
             .unwrap();
-        file.write_all(VENDOR_PUBLIC_KEYS.lms_pub_keys[i].as_bytes()).unwrap();
+        file.write_all(VENDOR_PUBLIC_KEYS.lms_pub_keys[i].as_bytes())
+            .unwrap();
     }
 }

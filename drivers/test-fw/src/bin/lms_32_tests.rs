@@ -247,8 +247,8 @@ fn test_ots_32() {
     ]);
     let result_ots = Lms::default().candidate_ots_signature::<8, 34>(
         &mut sha256,
-        &FINAL_OTS_SIG.ots_type,
         &LMS_IDENTIFIER,
+        &FINAL_OTS_SIG.ots_type,
         &q_str,
         &FINAL_OTS_SIG.y,
         &result,

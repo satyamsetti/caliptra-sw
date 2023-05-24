@@ -16,10 +16,10 @@ Abstract:
 
 use crate::{caliptra_err_def, Array4x8, CaliptraResult, Sha256};
 
-const D_PBLC: u16 = 0x8080;
-const D_MESG: u16 = 0x8181;
-const D_LEAF: u16 = 0x8282;
-const D_INTR: u16 = 0x8383;
+pub const D_PBLC: u16 = 0x8080;
+pub const D_MESG: u16 = 0x8181;
+pub const D_LEAF: u16 = 0x8282;
+pub const D_INTR: u16 = 0x8383;
 
 caliptra_err_def! {
     Lms,
@@ -491,14 +491,14 @@ impl Lms {
 
     pub fn hash_message<const N: usize>(
         &self,
+        sha256_driver: &mut Sha256,
         message: &[u8],
         lms_identifier: &LmsIdentifier,
         q: &[u8; 4],
         nonce: &[u32; N],
     ) -> CaliptraResult<HashValue<N>> {
         let mut digest = Array4x8::default();
-        let sha = Sha256::default();
-        let mut hasher = sha.digest_init(&mut digest)?;
+        let mut hasher = sha256_driver.digest_init(&mut digest)?;
         hasher.update(lms_identifier)?;
         hasher.update(q)?;
         hasher.update(&D_MESG.to_be_bytes())?;
@@ -513,6 +513,7 @@ impl Lms {
 
     pub fn candidate_ots_signature<const N: usize, const P: usize>(
         &self,
+        sha256_driver: &mut Sha256,
         lms_identifier: &LmsIdentifier,
         algo_type: &LmotsAlgorithmType,
         q: &[u8; 4],
@@ -558,8 +559,7 @@ impl Lms {
             hash_block[20..22].clone_from_slice(&(i as u16).to_be_bytes());
             for j in a..upper {
                 let mut digest = Array4x8::default();
-                let sha = Sha256::default();
-                let mut hasher = sha.digest_init(&mut digest)?;
+                let mut hasher = sha256_driver.digest_init(&mut digest)?;
                 hash_block[22] = j;
                 //hash_block[23..23 + N].clone_from_slice(&tmp.0);
                 let mut i = 23;
@@ -574,8 +574,7 @@ impl Lms {
             *val = tmp;
         }
         let mut digest = Array4x8::default();
-        let sha = Sha256::default();
-        let mut hasher = sha.digest_init(&mut digest)?;
+        let mut hasher = sha256_driver.digest_init(&mut digest)?;
         hasher.update(lms_identifier)?;
         hasher.update(q)?;
         hasher.update(&D_PBLC.to_be_bytes())?;
@@ -592,6 +591,7 @@ impl Lms {
 
     pub fn verify_lms_signature<const N: usize, const P: usize, const H: usize>(
         &self,
+        sha256_driver: &mut Sha256,
         input_string: &[u8],
         lms_public_key: &LmsPublicKey<N>,
         lms_sig: &LmsSignature<N, P, H>,
@@ -603,12 +603,14 @@ impl Lms {
             raise_err!(InvalidQValue);
         }
         let message_digest = self.hash_message(
+            sha256_driver,
             input_string,
             &lms_public_key.lms_identifier,
             &q_str,
             &lms_sig.nonce,
         )?;
         let candidate_key = self.candidate_ots_signature(
+            sha256_driver,
             &lms_public_key.lms_identifier,
             &lms_sig.ots_type,
             &q_str,
@@ -626,8 +628,7 @@ impl Lms {
         }
 
         let mut digest = Array4x8::default();
-        let sha = Sha256::default();
-        let mut hasher = sha.digest_init(&mut digest)?;
+        let mut hasher = sha256_driver.digest_init(&mut digest)?;
         hasher.update(&lms_public_key.lms_identifier)?;
         hasher.update(&node_num.to_be_bytes())?;
         hasher.update(&D_LEAF.to_be_bytes())?;
@@ -641,8 +642,7 @@ impl Lms {
         while node_num > 1 {
             if node_num % 2 == 1 {
                 let mut digest = Array4x8::default();
-                let sha = Sha256::default();
-                let mut hasher = sha.digest_init(&mut digest)?;
+                let mut hasher = sha256_driver.digest_init(&mut digest)?;
                 hasher.update(&lms_public_key.lms_identifier)?;
                 hasher.update(&(node_num / 2).to_be_bytes())?;
                 hasher.update(&D_INTR.to_be_bytes())?;
@@ -665,8 +665,7 @@ impl Lms {
                 temp = HashValue::<N>::from(digest);
             } else {
                 let mut digest = Array4x8::default();
-                let sha = Sha256::default();
-                let mut hasher = sha.digest_init(&mut digest)?;
+                let mut hasher = sha256_driver.digest_init(&mut digest)?;
                 hasher.update(&lms_public_key.lms_identifier)?;
                 hasher.update(&(node_num / 2).to_be_bytes())?;
                 hasher.update(&D_INTR.to_be_bytes())?;

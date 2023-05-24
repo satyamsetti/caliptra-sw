@@ -74,7 +74,7 @@ pub trait ImageVerificationEnv {
 
     /// Perform LMS Verification
     fn lms_verify(
-        &self,
+        &mut self,
         digest: &ImageDigest,
         pub_key: &ImageLmsPublicKey,
         sig: &ImageLmsSignature,

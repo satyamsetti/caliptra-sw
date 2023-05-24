@@ -36,6 +36,7 @@ caliptra_err_def! {
 
 /// ROM Verification Environemnt
 pub(crate) struct RomImageVerificationEnv<'a> {
+    pub(crate) sha256: &'a mut Sha256,
     pub(crate) sha384: &'a mut Sha384,
     pub(crate) sha384_acc: &'a mut Sha384Acc,
     pub(crate) soc_ifc: &'a mut SocIfc,
@@ -85,7 +86,7 @@ impl<'a> ImageVerificationEnv for &mut RomImageVerificationEnv<'a> {
     }
 
     fn lms_verify(
-        &self,
+        &mut self,
         digest: &ImageDigest,
         pub_key: &ImageLmsPublicKey,
         sig: &ImageLmsSignature,
@@ -95,8 +96,12 @@ impl<'a> ImageVerificationEnv for &mut RomImageVerificationEnv<'a> {
             message[i * 4..][..4].copy_from_slice(&digest[i].to_be_bytes());
         }
         let lms_public_key = parse_public_contents::<SHA192_DIGEST_WORD_SIZE>(pub_key.as_bytes())?;
-        let lms_sig = parse_signature_contents::<SHA192_DIGEST_WORD_SIZE, IMAGE_LMS_OTS_P_PARAM, IMAGE_LMS_KEY_HEIGHT>(sig.as_bytes())?;
-        Lms::default().verify_lms_signature(&message, &lms_public_key, &lms_sig)
+        let lms_sig = parse_signature_contents::<
+            SHA192_DIGEST_WORD_SIZE,
+            IMAGE_LMS_OTS_P_PARAM,
+            IMAGE_LMS_KEY_HEIGHT,
+        >(sig.as_bytes())?;
+        Lms::default().verify_lms_signature(self.sha256, &message, &lms_public_key, &lms_sig)
     }
 
     /// Retrieve Vendor Public Key Digest

@@ -20,8 +20,9 @@ use anyhow::{anyhow, Context};
 use caliptra_drivers::LmsAlgorithmType;
 
 use caliptra_drivers::{
-    lookup_lmots_algorithm_type, lookup_lms_algorithm_type, LmotsAlgorithmType, Lms, LmsIdentifier,
-    D_INTR, D_LEAF, D_MESG, D_PBLC,
+    get_lmots_parameters, get_lms_parameters, lookup_lmots_algorithm_type,
+    lookup_lms_algorithm_type, LmotsAlgorithmType, Lms, LmsIdentifier, D_INTR, D_LEAF, D_MESG,
+    D_PBLC,
 };
 use caliptra_image_gen::ImageGeneratorCrypto;
 use caliptra_image_types::*;
@@ -256,7 +257,7 @@ fn generate_lms_pubkey_helper(
     let mut pub_key_stack = vec![0u8; SHA192_DIGEST_BYTE_SIZE * (tree_height as usize)];
     let mut stack_idx: usize = 0;
     let max_idx: u32 = 1 << tree_height;
-    let alg_params = Lms::default().get_lmots_parameters(&ots_alg).unwrap();
+    let alg_params = get_lmots_parameters(&ots_alg).unwrap();
     let p: usize = alg_params.p as usize;
     for i in 0..max_idx {
         generate_lmots_pubkey_helper(id, i, p, alg_params.w, seed, &mut k[..]);
@@ -333,7 +334,7 @@ fn generate_ots_signature_helper(
     rand: &[u8],
     q: u32,
 ) -> ImageLmOTSSignature {
-    let alg_params = Lms::default().get_lmots_parameters(&ots_alg).unwrap();
+    let alg_params = get_lmots_parameters(&ots_alg).unwrap();
     let mut sig = ImageLmOTSSignature {
         otstype: u32::to_be(ots_alg as u32),
         ..Default::default()
@@ -402,7 +403,7 @@ fn generate_lms_pubkey(priv_key: &ImageLmsPrivKey) -> anyhow::Result<ImageLmsPub
         Some(x) => x,
         None => return Err(anyhow!("Error looking up lms ots type")),
     };
-    let Ok((_, height)) = Lms::default().get_lms_parameters(&tree_type) else {
+    let Ok((_, height)) = get_lms_parameters(&tree_type) else {
         return Err(anyhow!("Error parsing lms parameters"));
    };
     let mut pub_key = Some(ImageLmsPublicKey::default());
@@ -437,7 +438,7 @@ fn sign_with_lms_key(
         Some(x) => x,
         None => return Err(anyhow!("Error looking up lms ots type")),
     };
-    let Ok((_, height)) = Lms::default().get_lms_parameters(&lms_alg_type) else {
+    let Ok((_, height)) = get_lms_parameters(&lms_alg_type) else {
          return Err(anyhow!("Error parsing lms parameters"));
     };
     if q >= (1 << height) {
