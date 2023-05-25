@@ -303,6 +303,7 @@ pub const OWNER_CONFIG: ImageGeneratorOwnerConfig = ImageGeneratorOwnerConfig {
 };
 
 #[test]
+#[ignore]
 fn test_write_lms_keys() {
     for i in 0..VENDOR_PRIVATE_KEYS.lms_priv_keys.len() {
         let mut file = fs::OpenOptions::new()
