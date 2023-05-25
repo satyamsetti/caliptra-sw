@@ -117,9 +117,9 @@ impl<Crypto: ImageGeneratorCrypto> ImageGenerator<Crypto> {
                 &config.vendor_config.pub_keys.ecc_pub_keys[ecc_key_idx as usize],
             )?;
             vendor_sigs.ecc_sig = sig;
-            let lms_sig =
-                self.crypto
-                    .lms_sign(digest, 1, &priv_keys.lms_priv_keys[lms_key_idx as usize])?;
+            let lms_sig = self
+                .crypto
+                .lms_sign(digest, &priv_keys.lms_priv_keys[lms_key_idx as usize])?;
             vendor_sigs.lms_sig = lms_sig;
         }
 
