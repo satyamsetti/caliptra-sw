@@ -35,6 +35,10 @@ pub const SHA384_DIGEST_BYTE_SIZE: usize = 48;
 pub const IMAGE_LMS_OTS_P_PARAM: usize = 51;
 pub const IMAGE_LMS_KEY_HEIGHT: usize = 15;
 pub const IMAGE_BYTE_SIZE: usize = 128 * 1024;
+// LMS-SHA192-H15
+pub const IMAGE_LMS_TREE_TYPE: u32 = 0x0c000000;
+// LMOTS-SHA192-W4
+pub const IMAGE_LMS_OTS_TYPE: u32 = 0x07000000;
 pub const IMAGE_MANIFEST_BYTE_SIZE: usize = core::mem::size_of::<ImageManifest>();
 
 pub type ImageScalar = [u32; ECC384_SCALAR_WORD_SIZE];

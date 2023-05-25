@@ -3,7 +3,8 @@
 use caliptra_image_gen::{ImageGeneratorOwnerConfig, ImageGeneratorVendorConfig};
 use caliptra_image_types::{
     ImageEccPrivKey, ImageEccPubKey, ImageLmsPrivKey, ImageLmsPublicKey, ImageOwnerPrivKeys,
-    ImageOwnerPubKeys, ImageVendorPrivKeys, ImageVendorPubKeys,
+    ImageOwnerPubKeys, ImageVendorPrivKeys, ImageVendorPubKeys, IMAGE_LMS_OTS_TYPE,
+    IMAGE_LMS_TREE_TYPE,
 };
 
 #[cfg(test)]
@@ -97,8 +98,8 @@ pub const VENDOR_KEY_3_PRIVATE: ImageEccPrivKey = [
 ];
 
 pub const VENDOR_LMS_KEY0_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0x49, 0x08, 0xa1, 0x7b, 0xca, 0xdb, 0x18, 0x29, 0x1e, 0x28, 0x90, 0x58, 0xd5, 0xa8, 0xe3,
         0xe8,
@@ -109,8 +110,8 @@ pub const VENDOR_LMS_KEY0_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
     ],
 };
 pub const VENDOR_LMS_KEY0_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0x49, 0x08, 0xa1, 0x7b, 0xca, 0xdb, 0x18, 0x29, 0x1e, 0x28, 0x90, 0x58, 0xd5, 0xa8, 0xe3,
         0xe8,
@@ -122,8 +123,8 @@ pub const VENDOR_LMS_KEY0_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
 };
 
 pub const VENDOR_LMS_KEY1_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0x7c, 0xb5, 0x36, 0x9d, 0x64, 0xe4, 0x28, 0x1d, 0x04, 0x6e, 0x97, 0x7c, 0x70, 0xd4, 0xd0,
         0xa3,
@@ -134,8 +135,8 @@ pub const VENDOR_LMS_KEY1_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
     ],
 };
 pub const VENDOR_LMS_KEY1_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0x7c, 0xb5, 0x36, 0x9d, 0x64, 0xe4, 0x28, 0x1d, 0x04, 0x6e, 0x97, 0x7c, 0x70, 0xd4, 0xd0,
         0xa3,
@@ -147,8 +148,8 @@ pub const VENDOR_LMS_KEY1_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
 };
 
 pub const VENDOR_LMS_KEY2_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0x2b, 0xbb, 0x4b, 0x72, 0xc5, 0xb4, 0x1e, 0x05, 0xd2, 0xfa, 0xbe, 0x76, 0xf4, 0x17, 0x04,
         0xbd,
@@ -159,8 +160,8 @@ pub const VENDOR_LMS_KEY2_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
     ],
 };
 pub const VENDOR_LMS_KEY2_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0x2b, 0xbb, 0x4b, 0x72, 0xc5, 0xb4, 0x1e, 0x05, 0xd2, 0xfa, 0xbe, 0x76, 0xf4, 0x17, 0x04,
         0xbd,
@@ -172,8 +173,8 @@ pub const VENDOR_LMS_KEY2_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
 };
 
 pub const VENDOR_LMS_KEY3_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0x42, 0xcb, 0xa2, 0xe5, 0x57, 0x5b, 0x52, 0x35, 0x7e, 0xa7, 0xae, 0xad, 0xef, 0x54, 0x07,
         0x4c,
@@ -184,8 +185,8 @@ pub const VENDOR_LMS_KEY3_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
     ],
 };
 pub const VENDOR_LMS_KEY3_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0x42, 0xcb, 0xa2, 0xe5, 0x57, 0x5b, 0x52, 0x35, 0x7e, 0xa7, 0xae, 0xad, 0xef, 0x54, 0x07,
         0x4c,
@@ -197,8 +198,8 @@ pub const VENDOR_LMS_KEY3_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
 };
 
 pub const OWNER_LMS_KEY0_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0xe5, 0x6d, 0x3e, 0x53, 0xa5, 0xc2, 0x5b, 0xea, 0xf3, 0x3a, 0x90, 0x15, 0x5b, 0x27, 0x3a,
         0xe3,
@@ -209,8 +210,8 @@ pub const OWNER_LMS_KEY0_PRIVATE: ImageLmsPrivKey = ImageLmsPrivKey {
     ],
 };
 pub const OWNER_LMS_KEY0_PUBLIC: ImageLmsPublicKey = ImageLmsPublicKey {
-    tree_type: 0xc000000,
-    otstype: 0x7000000,
+    tree_type: IMAGE_LMS_TREE_TYPE,
+    otstype: IMAGE_LMS_OTS_TYPE,
     id: [
         0xe5, 0x6d, 0x3e, 0x53, 0xa5, 0xc2, 0x5b, 0xea, 0xf3, 0x3a, 0x90, 0x15, 0x5b, 0x27, 0x3a,
         0xe3,
