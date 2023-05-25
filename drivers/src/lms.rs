@@ -338,14 +338,12 @@ pub fn parse_public_contents<const N: usize>(
         raise_err!(InvalidHashWidth);
     }
 
-    let mut lms_identifier = [0u8; 16];
-    lms_identifier.copy_from_slice(&public_string[pos..pos + 16]);
+    let lms_identifier: [u8; 16] = public_string[pos..][..16].try_into().unwrap();
     pos += 16;
 
     let mut temp = [0u32; N];
-    //temp.copy_from_slice(&public_string[pos..pos + N]);
 
-    for t in temp.iter_mut().take(N) {
+    for t in temp.iter_mut() {
         *t = slice_to_num(&public_string[pos..pos + 4]);
         pos += 4;
     }
@@ -388,13 +386,13 @@ pub fn parse_signature_contents<const N: usize, const P: usize, const H: usize>(
     }
 
     let mut nonce = [0u32; N];
-    for i in nonce.iter_mut().take(N) {
+    for i in nonce.iter_mut() {
         *i = slice_to_num(&signature[pos..pos + 4]);
         pos += 4;
     }
 
     let mut y = [HashValue::<N>::default(); P];
-    for t in y.iter_mut().take(P) {
+    for t in y.iter_mut() {
         let mut tmp = [0u32; N];
         for tt in tmp.iter_mut().take(N) {
             *tt = slice_to_num(&signature[pos..pos + 4]);
@@ -421,7 +419,7 @@ pub fn parse_signature_contents<const N: usize, const P: usize, const H: usize>(
     }
 
     let mut path = [HashValue::<N>::default(); H];
-    for t in path.iter_mut().take(H) {
+    for t in path.iter_mut() {
         let mut tmp = [0u32; N];
         for tt in tmp.iter_mut().take(N) {
             *tt = slice_to_num(&signature[pos..pos + 4]);
@@ -502,7 +500,6 @@ impl Lms {
         hasher.update(lms_identifier)?;
         hasher.update(q)?;
         hasher.update(&D_MESG.to_be_bytes())?;
-        //hasher.update(nonce)?;
         for i in nonce.iter() {
             hasher.update(&i.to_be_bytes())?;
         }
@@ -535,7 +532,7 @@ impl Lms {
         let mut message_hash_with_checksum = [0u8; 34]; // 2 extra bytes for the checksum. needs to be N+2
 
         let mut i = 0;
-        for val in message_digest.0.iter().take(N) {
+        for val in message_digest.0.iter() {
             message_hash_with_checksum[i..i + 4].clone_from_slice(&val.to_be_bytes());
             i += 4;
         }
@@ -551,7 +548,7 @@ impl Lms {
         let mut hash_block = [0u8; 55];
         hash_block[0..16].clone_from_slice(lms_identifier);
         hash_block[16..20].clone_from_slice(q);
-        for (i, val) in z.iter_mut().enumerate().take(P) {
+        for (i, val) in z.iter_mut().enumerate() {
             let a = self.coefficient(&message_hash_with_checksum, i, params.w as usize)?;
             let mut tmp = y[i];
             let t_upper: u16 = (1 << params.w) - 1; // subtract with overflow?
@@ -561,7 +558,6 @@ impl Lms {
                 let mut digest = Array4x8::default();
                 let mut hasher = sha256_driver.digest_init(&mut digest)?;
                 hash_block[22] = j;
-                //hash_block[23..23 + N].clone_from_slice(&tmp.0);
                 let mut i = 23;
                 for val in tmp.0.iter().take(N) {
                     hash_block[i..i + 4].clone_from_slice(&val.to_be_bytes());
@@ -579,7 +575,6 @@ impl Lms {
         hasher.update(q)?;
         hasher.update(&D_PBLC.to_be_bytes())?;
         for t in z {
-            //hasher.update(&t.0)?;
             for val in t.0.iter() {
                 hasher.update(&val.to_be_bytes())?;
             }
@@ -632,7 +627,6 @@ impl Lms {
         hasher.update(&lms_public_key.lms_identifier)?;
         hasher.update(&node_num.to_be_bytes())?;
         hasher.update(&D_LEAF.to_be_bytes())?;
-        //hasher.update(&candidate_key.0)?;
         for val in candidate_key.0.iter() {
             hasher.update(&val.to_be_bytes())?;
         }
@@ -646,7 +640,6 @@ impl Lms {
                 hasher.update(&lms_public_key.lms_identifier)?;
                 hasher.update(&(node_num / 2).to_be_bytes())?;
                 hasher.update(&D_INTR.to_be_bytes())?;
-                //hasher.update(&lms_sig.lms_path.get(i).ok_or(err_u32!(PathOutOfBounds))?.0)?;
                 for val in lms_sig
                     .path
                     .get(i)
@@ -657,7 +650,6 @@ impl Lms {
                 {
                     hasher.update(&val.to_be_bytes())?;
                 }
-                //hasher.update(&temp.0)?;
                 for val in temp.0.iter().take(N) {
                     hasher.update(&val.to_be_bytes())?;
                 }
@@ -669,12 +661,9 @@ impl Lms {
                 hasher.update(&lms_public_key.lms_identifier)?;
                 hasher.update(&(node_num / 2).to_be_bytes())?;
                 hasher.update(&D_INTR.to_be_bytes())?;
-                //hasher.update(&temp.0)?;
                 for val in temp.0.iter() {
                     hasher.update(&val.to_be_bytes())?;
                 }
-                //hasher.update(&lms_sig.lms_path[i].0)?;
-                //hasher.update(&lms_sig.lms_path.get(i).ok_or(err_u32!(PathOutOfBounds))?.0)?;
                 for val in lms_sig
                     .path
                     .get(i)
