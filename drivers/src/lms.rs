@@ -393,14 +393,18 @@ pub fn parse_signature_contents<const N: usize, const P: usize, const H: usize>(
 
     let mut y = [HashValue::<N>::default(); P];
     for t in y.iter_mut() {
-        let mut tmp = [0u32; N];
-        for tt in tmp.iter_mut().take(N) {
-            *tt = slice_to_num(&signature[pos..pos + 4]);
+        for tt in t.0.iter_mut() {
+            if pos > signature.len() - 4 {
+                raise_err!(InvalidSignatureDepth);
+            }
+            *tt = slice_to_num(&signature[pos..][..4]);
             pos += 4;
         }
-        *t = HashValue::<N>::from(tmp);
     }
-    let lms_type = lookup_lms_algorithm_type(slice_to_num(&signature[pos..pos + 4]))
+    if pos > signature.len() - 4 || pos + 4 > signature.len() {
+        raise_err!(InvalidSignatureLength);
+    }
+    let lms_type = lookup_lms_algorithm_type(slice_to_num(&signature[pos..][..4]))
         .ok_or(err_u32!(InvalidLmsAlgorithmType))?;
     pos += 4;
 
@@ -420,12 +424,13 @@ pub fn parse_signature_contents<const N: usize, const P: usize, const H: usize>(
 
     let mut path = [HashValue::<N>::default(); H];
     for t in path.iter_mut() {
-        let mut tmp = [0u32; N];
-        for tt in tmp.iter_mut().take(N) {
-            *tt = slice_to_num(&signature[pos..pos + 4]);
+        for tt in t.0.iter_mut() {
+            if pos > signature.len() - 4 {
+                raise_err!(InvalidSignatureDepth);
+            }
+            *tt = slice_to_num(&signature[pos..][..4]);
             pos += 4;
         }
-        *t = HashValue::<N>::from(tmp);
     }
     let lms_sig = LmsSignature {
         q,

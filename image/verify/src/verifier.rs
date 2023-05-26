@@ -75,6 +75,7 @@ caliptra_err_def! {
         VendorLmsVerifyFailure = 49,
         VendorLmsPubKeyIndexOutOfBounds = 50,
         VendorLmsSignatureInvalid = 51,
+        UpdateResetVenLmsPubKeyIdxOutOfBounds = 52,
     }
 }
 
@@ -200,6 +201,10 @@ impl<Env: ImageVerificationEnv> ImageVerifier<Env> {
         );
 
         let vendor_lms_pub_key_idx = preamble.vendor_lms_pub_key_idx;
+        if vendor_lms_pub_key_idx >= VENDOR_LMS_KEY_COUNT {
+            raise_err!(UpdateResetVenLmsPubKeyIdxOutOfBounds)
+        }
+
         let vendor_lms_info = (
             &preamble.vendor_pub_keys.lms_pub_keys[vendor_lms_pub_key_idx as usize],
             &preamble.vendor_sigs.lms_sig,
