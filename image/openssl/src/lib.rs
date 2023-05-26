@@ -16,14 +16,6 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, Context};
 
-#[cfg(test)]
-use caliptra_drivers::LmsAlgorithmType;
-
-use caliptra_drivers::{
-    get_lmots_parameters, get_lms_parameters, lookup_lmots_algorithm_type,
-    lookup_lms_algorithm_type, LmotsAlgorithmType, Lms, LmsIdentifier, D_INTR, D_LEAF, D_MESG,
-    D_PBLC,
-};
 use caliptra_image_gen::ImageGeneratorCrypto;
 use caliptra_image_types::*;
 use openssl::bn::{BigNum, BigNumContext};
@@ -40,6 +32,16 @@ pub struct OsslCrypto {}
 
 const LMS_TREE_GEN_SUPPORTED_FULL_HEIGHT: u8 = 10u8;
 const SUPPORTED_LMS_Q_VALUE: u32 = 5u32;
+
+// LMS-SHA192-H5
+const IMAGE_LMS_TREE_TYPE_HT_5: u32 = 0x0A000000;
+// LMOTS-SHA192-W8
+const IMAGE_LMS_OTS_TYPE_8: u32 = 0x08000000;
+
+const D_PBLC: u16 = 0x8080;
+const D_MESG: u16 = 0x8181;
+const D_LEAF: u16 = 0x8282;
+const D_INTR: u16 = 0x8383;
 
 impl ImageGeneratorCrypto for OsslCrypto {
     /// Calculate SHA-384 Digest
@@ -169,7 +171,7 @@ fn from_hw_format(value: &[u32; ECC384_SCALAR_WORD_SIZE]) -> [u8; ECC384_SCALAR_
 }
 
 // https://www.rfc-editor.org/rfc/rfc8554.html#appendix-A
-fn gen_x(id: &LmsIdentifier, q: u32, p: usize, seed: &[u8], x: &mut [u8]) {
+fn gen_x(id: &[u8], q: u32, p: usize, seed: &[u8], x: &mut [u8]) {
     for i in 0..p {
         let offset = i * SHA192_DIGEST_BYTE_SIZE;
         let x_i = &mut x[offset..][..SHA192_DIGEST_BYTE_SIZE];
@@ -187,7 +189,7 @@ fn gen_x(id: &LmsIdentifier, q: u32, p: usize, seed: &[u8], x: &mut [u8]) {
     }
 }
 
-fn gen_k(id: &LmsIdentifier, q: u32, p: usize, w: u8, x: &[u8], k: &mut [u8]) {
+fn gen_k(id: &[u8], q: u32, p: usize, w: u8, x: &[u8], k: &mut [u8]) {
     let mut y = vec![0u8; p * SHA192_DIGEST_BYTE_SIZE];
     for i in 0..p {
         let offset = i * SHA192_DIGEST_BYTE_SIZE;
@@ -219,7 +221,7 @@ fn gen_k(id: &LmsIdentifier, q: u32, p: usize, w: u8, x: &[u8], k: &mut [u8]) {
 }
 
 fn generate_lmots_pubkey_helper(
-    id: &LmsIdentifier,
+    id: &[u8],
     q: u32,
     p: usize,
     w: u8,
@@ -229,6 +231,33 @@ fn generate_lmots_pubkey_helper(
     let mut x = vec![0u8; p * SHA192_DIGEST_BYTE_SIZE];
     gen_x(id, q, p, seed, &mut x);
     gen_k(id, q, p, w, &x, k);
+}
+
+fn coefficient(s: &[u8], i: usize, w: usize) -> anyhow::Result<u8> {
+    let bitmask: u16 = (1 << (w)) - 1;
+    let index = i * w / 8;
+    if index >= s.len() {
+        return Err(anyhow!("Error invalid coeff index"));
+    }
+    let b = s[index];
+
+    // extra logic to avoid the divide by 0
+    // which a good compiler would notice only happens when w is 0 and that portion of the
+    // expression could be skipped
+    let mut shift = 8;
+    if w != 0 {
+        shift = 8 - (w * (i % (8 / w)) + w);
+    }
+
+    // Rust errors if we try to shift off all of the bits off from a value
+    // some implementations 0 fill, others do some other filling.
+    // we make this be 0
+    let mut rs = 0;
+    if shift < 8 {
+        rs = b >> shift;
+    }
+    let small_bitmask = bitmask as u8;
+    Ok(small_bitmask & rs)
 }
 
 fn stack_top_mut(st: &mut [u8], st_index: usize) -> &mut [u8] {
@@ -241,8 +270,8 @@ fn stack_top(st: &[u8], st_index: usize) -> &[u8] {
 
 // // https://datatracker.ietf.org/doc/html/rfc8554#appendix-C
 fn generate_lms_pubkey_helper(
-    id: &LmsIdentifier,
-    ots_alg: LmotsAlgorithmType,
+    id: &[u8],
+    ots_alg: u32,
     tree_height: u8,
     seed: &[u8],
     q: Option<u32>,
@@ -260,12 +289,15 @@ fn generate_lms_pubkey_helper(
     let mut pub_key_stack = vec![0u8; SHA192_DIGEST_BYTE_SIZE * (tree_height as usize)];
     let mut stack_idx: usize = 0;
     let max_idx: u32 = 1 << tree_height;
-    let alg_params = get_lmots_parameters(&ots_alg).unwrap();
-    let p: usize = alg_params.p as usize;
+
+    let (p, w) = match ots_alg {
+        IMAGE_LMS_OTS_TYPE_8 => (26usize, 8u8),
+        _ => (51usize, 4u8),
+    };
     for i in 0..max_idx {
         // TODO: We only support a fixed Q in larger trees
         if tree_height <= LMS_TREE_GEN_SUPPORTED_FULL_HEIGHT || i == SUPPORTED_LMS_Q_VALUE {
-            generate_lmots_pubkey_helper(id, i, p, alg_params.w, seed, &mut k[..]);
+            generate_lmots_pubkey_helper(id, i, p, w, seed, &mut k[..]);
         } else {
             k[..].copy_from_slice(&zero_k[..]);
         }
@@ -336,15 +368,18 @@ fn generate_lms_pubkey_helper(
 // https://datatracker.ietf.org/doc/html/rfc8554#section-4.5
 fn generate_ots_signature_helper(
     message: &[u8],
-    ots_alg: LmotsAlgorithmType,
-    id: &LmsIdentifier,
+    ots_alg: u32,
+    id: &[u8],
     seed: &[u8],
     rand: &[u8],
     q: u32,
 ) -> ImageLmOTSSignature {
-    let alg_params = get_lmots_parameters(&ots_alg).unwrap();
+    let (alg_p, width, ls) = match ots_alg {
+        IMAGE_LMS_OTS_TYPE_8 => (26usize, 8usize, 0u8),
+        _ => (51usize, 4usize, 4u8),
+    };
     let mut sig = ImageLmOTSSignature {
-        otstype: u32::to_be(ots_alg as u32),
+        otstype: ots_alg,
         ..Default::default()
     };
     sig.random.clone_from_slice(rand);
@@ -358,14 +393,12 @@ fn generate_ots_signature_helper(
     q_arr.clone_from_slice(&hasher.finish()[..SHA192_DIGEST_BYTE_SIZE]);
 
     let mut checksum: u16 = 0;
-    let width: usize = alg_params.w.into();
     let data_coeff: usize = (SHA192_DIGEST_BYTE_SIZE * 8) / width;
-    let alg_p: usize = alg_params.p.into();
-    let alg_chksum_max: u16 = (1 << alg_params.w) - 1;
+    let alg_chksum_max: u16 = (1 << width) - 1;
     for i in 0..data_coeff {
-        checksum += alg_chksum_max - (Lms::default().coefficient(&q_arr, i, width).unwrap() as u16);
+        checksum += alg_chksum_max - (coefficient(&q_arr, i, width).unwrap() as u16);
     }
-    checksum <<= alg_params.ls;
+    checksum <<= ls;
 
     let checksum_str: [u8; 2] = checksum.to_be_bytes();
 
@@ -374,10 +407,9 @@ fn generate_ots_signature_helper(
 
     for i in 0..alg_p {
         let a: u8 = if i < data_coeff {
-            Lms::default().coefficient(&q_arr, i, width).unwrap()
+            coefficient(&q_arr, i, width).unwrap()
         } else {
-            Lms::default()
-                .coefficient(&checksum_str, i - data_coeff, width)
+            coefficient(&checksum_str, i - data_coeff, width)
                 .unwrap()
         };
 
@@ -403,17 +435,21 @@ fn generate_ots_signature_helper(
 
 #[allow(unused)]
 fn generate_lms_pubkey(priv_key: &ImageLmsPrivKey) -> anyhow::Result<ImageLmsPublicKey> {
-    let tree_type = match lookup_lms_algorithm_type(u32::from_be(priv_key.tree_type)) {
-        Some(x) => x,
-        None => return Err(anyhow!("Error looking up lms tree type")),
+    match priv_key.tree_type {
+        IMAGE_LMS_TREE_TYPE => {},
+        IMAGE_LMS_TREE_TYPE_HT_5 => {},
+        _ => return Err(anyhow!("Error looking up lms tree type")),
     };
-    let ots_type = match lookup_lmots_algorithm_type(u32::from_be(priv_key.otstype)) {
-        Some(x) => x,
-        None => return Err(anyhow!("Error looking up lms ots type")),
+    match priv_key.otstype {
+        IMAGE_LMS_OTS_TYPE => {},
+        IMAGE_LMS_OTS_TYPE_8 => {},
+        _ => return Err(anyhow!("Error looking up lms ots type")),
     };
-    let Ok((_, height)) = get_lms_parameters(&tree_type) else {
-        return Err(anyhow!("Error parsing lms parameters"));
-   };
+    let height = match priv_key.tree_type {
+        IMAGE_LMS_TREE_TYPE => 15,
+        IMAGE_LMS_TREE_TYPE_HT_5 => 5,
+        _ => return Err(anyhow!("Error parsing lms parameters")),
+    };
     let mut pub_key = Some(ImageLmsPublicKey::default());
     if let Some(x) = pub_key.as_mut() {
         x.otstype = priv_key.otstype;
@@ -422,7 +458,7 @@ fn generate_lms_pubkey(priv_key: &ImageLmsPrivKey) -> anyhow::Result<ImageLmsPub
     }
     generate_lms_pubkey_helper(
         &priv_key.id,
-        ots_type,
+        priv_key.otstype,
         height,
         &priv_key.seed,
         None,
@@ -438,23 +474,27 @@ fn sign_with_lms_key(
     nonce: &[u8],
     q: u32,
 ) -> anyhow::Result<ImageLmsSignature> {
-    let lms_alg_type = match lookup_lms_algorithm_type(u32::from_be(priv_key.tree_type)) {
-        Some(x) => x,
-        None => return Err(anyhow!("Error looking up lms tree type")),
+    match priv_key.tree_type {
+        IMAGE_LMS_TREE_TYPE => {},
+        IMAGE_LMS_TREE_TYPE_HT_5 => {},
+        _ => return Err(anyhow!("Error looking up lms tree type")),
     };
-    let ots_alg_type = match lookup_lmots_algorithm_type(u32::from_be(priv_key.otstype)) {
-        Some(x) => x,
-        None => return Err(anyhow!("Error looking up lms ots type")),
+    match priv_key.otstype {
+        IMAGE_LMS_OTS_TYPE => {},
+        IMAGE_LMS_OTS_TYPE_8 => {},
+        _ => return Err(anyhow!("Error looking up lms ots type")),
     };
-    let Ok((_, height)) = get_lms_parameters(&lms_alg_type) else {
-         return Err(anyhow!("Error parsing lms parameters"));
+    let height = match priv_key.tree_type {
+        IMAGE_LMS_TREE_TYPE => 15,
+        IMAGE_LMS_TREE_TYPE_HT_5 => 5,
+        _ => return Err(anyhow!("Error parsing lms parameters")),
     };
     if q >= (1 << height) {
         return Err(anyhow!("Invalid q"));
     }
     let ots_sig = generate_ots_signature_helper(
         message,
-        ots_alg_type,
+        priv_key.otstype,
         &priv_key.id,
         &priv_key.seed,
         nonce,
@@ -469,7 +509,7 @@ fn sign_with_lms_key(
 
     generate_lms_pubkey_helper(
         &priv_key.id,
-        ots_alg_type,
+        priv_key.otstype,
         height,
         &priv_key.seed,
         Some(q),
@@ -483,8 +523,8 @@ fn sign_with_lms_key(
 #[ignore]
 fn test_print_lms_private_pub_key() {
     let mut priv_key: ImageLmsPrivKey = ImageLmsPrivKey {
-        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H15 as u32),
-        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W4 as u32),
+        tree_type: IMAGE_LMS_TREE_TYPE,
+        otstype: IMAGE_LMS_OTS_TYPE,
         ..Default::default()
     };
     for i in 0..4 {
@@ -506,8 +546,8 @@ fn test_print_lms_private_pub_key() {
 #[test]
 fn test_lms() {
     let priv_key = ImageLmsPrivKey {
-        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H5 as u32),
-        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W8 as u32),
+        tree_type: IMAGE_LMS_TREE_TYPE_HT_5,
+        otstype: IMAGE_LMS_OTS_TYPE_8,
         id: [
             0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d,
             0x2e, 0x2f,
@@ -518,8 +558,8 @@ fn test_lms() {
         ],
     };
     let expected_pub_key = ImageLmsPublicKey {
-        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H5 as u32),
-        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W8 as u32),
+        tree_type: IMAGE_LMS_TREE_TYPE_HT_5,
+        otstype: IMAGE_LMS_OTS_TYPE_8,
         id: priv_key.id,
         digest: [
             0x2c, 0x57, 0x14, 0x50, 0xae, 0xd9, 0x9c, 0xfb, 0x4f, 0x4a, 0xc2, 0x85, 0xda, 0x14,
@@ -533,8 +573,8 @@ fn test_lms() {
 #[test]
 fn test_lms_sig() {
     let priv_key = ImageLmsPrivKey {
-        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H5 as u32),
-        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W8 as u32),
+        tree_type: IMAGE_LMS_TREE_TYPE_HT_5,
+        otstype: IMAGE_LMS_OTS_TYPE_8,
         id: [
             0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d,
             0x2e, 0x2f,
@@ -686,8 +726,8 @@ fn test_lms_sig() {
         ..Default::default()
     };
 
-    expected_sig.tree_type = u32::to_be(LmsAlgorithmType::LmsSha256N24H5 as u32);
-    expected_sig.ots_sig.otstype = u32::to_be(LmotsAlgorithmType::LmotsSha256N24W8 as u32);
+    expected_sig.tree_type = IMAGE_LMS_TREE_TYPE_HT_5;
+    expected_sig.ots_sig.otstype = IMAGE_LMS_OTS_TYPE_8;
     expected_sig.ots_sig.random = nonce;
     assert_eq!(26, expected_ots_sig.len());
     assert_eq!(5, expected_tree_path.len());
@@ -703,8 +743,8 @@ fn test_lms_sig() {
 #[test]
 fn test_lms_sig_h15() {
     let priv_key = ImageLmsPrivKey {
-        tree_type: u32::to_be(LmsAlgorithmType::LmsSha256N24H15 as u32),
-        otstype: u32::to_be(LmotsAlgorithmType::LmotsSha256N24W4 as u32),
+        tree_type: IMAGE_LMS_TREE_TYPE,
+        otstype: IMAGE_LMS_OTS_TYPE,
         id: [
             0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d,
             0x2e, 0x2f,
@@ -997,8 +1037,8 @@ fn test_lms_sig_h15() {
         ..Default::default()
     };
 
-    expected_sig.tree_type = u32::to_be(LmsAlgorithmType::LmsSha256N24H15 as u32);
-    expected_sig.ots_sig.otstype = u32::to_be(LmotsAlgorithmType::LmotsSha256N24W4 as u32);
+    expected_sig.tree_type = IMAGE_LMS_TREE_TYPE;
+    expected_sig.ots_sig.otstype = IMAGE_LMS_OTS_TYPE;
     expected_sig.ots_sig.random = nonce;
     assert_eq!(51, expected_ots_sig.len());
     assert_eq!(15, expected_tree_path.len());
