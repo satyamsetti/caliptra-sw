@@ -665,10 +665,10 @@ mod tests {
         r: DUMMY_DATA,
         s: DUMMY_DATA,
     };
-    fn VENDOR_LMS_PUBKEY() -> ImageLmsPublicKey {
+    fn vendor_lms_pubkey() -> ImageLmsPublicKey {
         ImageLmsPublicKey::default()
     }
-    fn VENDOR_LMS_SIG() -> ImageLmsSignature {
+    fn vendor_lms_sig() -> ImageLmsSignature {
         ImageLmsSignature::default()
     }
     const OWNER_ECC_PUBKEY: ImageEccPubKey = ImageEccPubKey {
@@ -870,7 +870,7 @@ mod tests {
             vendor_ecc_pub_key_idx: 0,
             vendor_lms_pub_key_idx: 0,
             vendor_info: (&ImageEccPubKey::default(), &ImageEccSignature::default()),
-            vendor_lms_info: (&VENDOR_LMS_PUBKEY(), &VENDOR_LMS_SIG()),
+            vendor_lms_info: (&vendor_lms_pubkey(), &vendor_lms_sig()),
             owner_info: Some((&ecc_pubkey, &ecc_sig)),
             owner_pub_keys_digest: ImageDigest::default(),
         };
@@ -889,7 +889,7 @@ mod tests {
             vendor_ecc_pub_key_idx: 0,
             vendor_lms_pub_key_idx: 0,
             vendor_info: (&VENDOR_ECC_PUBKEY, &ImageEccSignature::default()),
-            vendor_lms_info: (&VENDOR_LMS_PUBKEY(), &VENDOR_LMS_SIG()),
+            vendor_lms_info: (&vendor_lms_pubkey(), &vendor_lms_sig()),
             owner_info: Some((&owner_ecc_pubkey, &owner_ecc_sig)),
             owner_pub_keys_digest: ImageDigest::default(),
         };
@@ -913,7 +913,7 @@ mod tests {
             vendor_ecc_pub_key_idx: 0,
             vendor_lms_pub_key_idx: 0,
             vendor_info: (&VENDOR_ECC_PUBKEY, &VENDOR_ECC_SIG),
-            vendor_lms_info: (&VENDOR_LMS_PUBKEY(), &VENDOR_LMS_SIG()),
+            vendor_lms_info: (&vendor_lms_pubkey(), &vendor_lms_sig()),
             owner_info: Some((&owner_ecc_pubkey, &owner_ecc_sig)),
             owner_pub_keys_digest: ImageDigest::default(),
         };
@@ -938,7 +938,7 @@ mod tests {
             vendor_ecc_pub_key_idx: 0,
             vendor_lms_pub_key_idx: 0,
             vendor_info: (&VENDOR_ECC_PUBKEY, &VENDOR_ECC_SIG),
-            vendor_lms_info: (&VENDOR_LMS_PUBKEY(), &VENDOR_LMS_SIG()),
+            vendor_lms_info: (&vendor_lms_pubkey(), &vendor_lms_sig()),
             owner_info: Some((&owner_ecc_pubkey, &owner_ecc_sig)),
             owner_pub_keys_digest: ImageDigest::default(),
         };
@@ -961,7 +961,7 @@ mod tests {
             vendor_ecc_pub_key_idx: 1,
             vendor_lms_pub_key_idx: 0,
             vendor_info: (&VENDOR_ECC_PUBKEY, &VENDOR_ECC_SIG),
-            vendor_lms_info: (&VENDOR_LMS_PUBKEY(), &VENDOR_LMS_SIG()),
+            vendor_lms_info: (&vendor_lms_pubkey(), &vendor_lms_sig()),
             owner_info: Some((&owner_ecc_pubkey, &owner_ecc_sig)),
             owner_pub_keys_digest: ImageDigest::default(),
         };
@@ -984,7 +984,7 @@ mod tests {
             vendor_ecc_pub_key_idx: 0,
             vendor_lms_pub_key_idx: 0,
             vendor_info: (&VENDOR_ECC_PUBKEY, &VENDOR_ECC_SIG),
-            vendor_lms_info: (&VENDOR_LMS_PUBKEY(), &VENDOR_LMS_SIG()),
+            vendor_lms_info: (&vendor_lms_pubkey(), &vendor_lms_sig()),
             owner_info: Some((&owner_ecc_pubkey, &owner_ecc_sig)),
             owner_pub_keys_digest: ImageDigest::default(),
         };
@@ -1006,7 +1006,7 @@ mod tests {
             vendor_ecc_pub_key_idx: 0,
             vendor_lms_pub_key_idx: 0,
             vendor_info: (&VENDOR_ECC_PUBKEY, &VENDOR_ECC_SIG),
-            vendor_lms_info: (&VENDOR_LMS_PUBKEY(), &VENDOR_LMS_SIG()),
+            vendor_lms_info: (&vendor_lms_pubkey(), &vendor_lms_sig()),
             owner_info: Some((&OWNER_ECC_PUBKEY, &owner_ecc_sig)),
             owner_pub_keys_digest: ImageDigest::default(),
         };
@@ -1031,7 +1031,7 @@ mod tests {
             vendor_ecc_pub_key_idx: 0,
             vendor_lms_pub_key_idx: 0,
             vendor_info: (&VENDOR_ECC_PUBKEY, &VENDOR_ECC_SIG),
-            vendor_lms_info: (&VENDOR_LMS_PUBKEY(), &VENDOR_LMS_SIG()),
+            vendor_lms_info: (&vendor_lms_pubkey(), &vendor_lms_sig()),
             owner_info: Some((&OWNER_ECC_PUBKEY, &OWNER_ECC_SIG)),
             owner_pub_keys_digest: ImageDigest::default(),
         };

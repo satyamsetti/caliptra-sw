@@ -74,8 +74,15 @@ impl<Crypto: ImageGeneratorCrypto> ImageGenerator<Crypto> {
         )?;
 
         // Create Preamable
-        let header_digest = self.header_digest(&header)?;
-        let preamble = self.gen_preamble(config, ecc_key_idx, lms_key_idx, &header_digest)?;
+        let header_digest_vendor = self.header_digest_vendor(&header)?;
+        let header_digest_owner = self.header_digest_owner(&header)?;
+        let preamble = self.gen_preamble(
+            config,
+            ecc_key_idx,
+            lms_key_idx,
+            &header_digest_vendor,
+            &header_digest_owner,
+        )?;
 
         // Create Manifest
         let manifest = ImageManifest {
@@ -119,9 +126,10 @@ impl<Crypto: ImageGeneratorCrypto> ImageGenerator<Crypto> {
                 &config.vendor_config.pub_keys.ecc_pub_keys[ecc_key_idx as usize],
             )?;
             vendor_sigs.ecc_sig = sig;
-            let lms_sig = self
-                .crypto
-                .lms_sign(digest, &priv_keys.lms_priv_keys[lms_key_idx as usize])?;
+            let lms_sig = self.crypto.lms_sign(
+                digest_vendor,
+                &priv_keys.lms_priv_keys[lms_key_idx as usize],
+            )?;
             vendor_sigs.lms_sig = lms_sig;
         }
 
