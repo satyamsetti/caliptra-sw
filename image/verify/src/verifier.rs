@@ -423,9 +423,9 @@ impl<Env: ImageVerificationEnv> ImageVerifier<Env> {
         }
 
         result = self
-        .env
-        .lms_verify(digest, lms_pub_key, lms_sig)
-        .map_err(|_| err_u32!(VendorLmsVerifyFailure))?;
+            .env
+            .lms_verify(digest, lms_pub_key, lms_sig)
+            .map_err(|_| err_u32!(VendorLmsVerifyFailure))?;
         if !result {
             raise_err!(VendorLmsSignatureInvalid)
         }
