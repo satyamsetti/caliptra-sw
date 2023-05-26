@@ -220,14 +220,7 @@ fn gen_k(id: &[u8], q: u32, p: usize, w: u8, x: &[u8], k: &mut [u8]) {
     k.clone_from_slice(&hasher.finish()[..SHA192_DIGEST_BYTE_SIZE]);
 }
 
-fn generate_lmots_pubkey_helper(
-    id: &[u8],
-    q: u32,
-    p: usize,
-    w: u8,
-    seed: &[u8],
-    k: &mut [u8],
-) {
+fn generate_lmots_pubkey_helper(id: &[u8], q: u32, p: usize, w: u8, seed: &[u8], k: &mut [u8]) {
     let mut x = vec![0u8; p * SHA192_DIGEST_BYTE_SIZE];
     gen_x(id, q, p, seed, &mut x);
     gen_k(id, q, p, w, &x, k);
@@ -409,8 +402,7 @@ fn generate_ots_signature_helper(
         let a: u8 = if i < data_coeff {
             coefficient(&q_arr, i, width).unwrap()
         } else {
-            coefficient(&checksum_str, i - data_coeff, width)
-                .unwrap()
+            coefficient(&checksum_str, i - data_coeff, width).unwrap()
         };
 
         let offset: usize = i * SHA192_DIGEST_BYTE_SIZE;
@@ -436,13 +428,13 @@ fn generate_ots_signature_helper(
 #[allow(unused)]
 fn generate_lms_pubkey(priv_key: &ImageLmsPrivKey) -> anyhow::Result<ImageLmsPublicKey> {
     match priv_key.tree_type {
-        IMAGE_LMS_TREE_TYPE => {},
-        IMAGE_LMS_TREE_TYPE_HT_5 => {},
+        IMAGE_LMS_TREE_TYPE => {}
+        IMAGE_LMS_TREE_TYPE_HT_5 => {}
         _ => return Err(anyhow!("Error looking up lms tree type")),
     };
     match priv_key.otstype {
-        IMAGE_LMS_OTS_TYPE => {},
-        IMAGE_LMS_OTS_TYPE_8 => {},
+        IMAGE_LMS_OTS_TYPE => {}
+        IMAGE_LMS_OTS_TYPE_8 => {}
         _ => return Err(anyhow!("Error looking up lms ots type")),
     };
     let height = match priv_key.tree_type {
@@ -475,13 +467,13 @@ fn sign_with_lms_key(
     q: u32,
 ) -> anyhow::Result<ImageLmsSignature> {
     match priv_key.tree_type {
-        IMAGE_LMS_TREE_TYPE => {},
-        IMAGE_LMS_TREE_TYPE_HT_5 => {},
+        IMAGE_LMS_TREE_TYPE => {}
+        IMAGE_LMS_TREE_TYPE_HT_5 => {}
         _ => return Err(anyhow!("Error looking up lms tree type")),
     };
     match priv_key.otstype {
-        IMAGE_LMS_OTS_TYPE => {},
-        IMAGE_LMS_OTS_TYPE_8 => {},
+        IMAGE_LMS_OTS_TYPE => {}
+        IMAGE_LMS_OTS_TYPE_8 => {}
         _ => return Err(anyhow!("Error looking up lms ots type")),
     };
     let height = match priv_key.tree_type {
