@@ -394,7 +394,6 @@ name = "caliptra-image-openssl"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "caliptra-drivers",
  "caliptra-image-gen",
  "caliptra-image-types",
  "openssl",
