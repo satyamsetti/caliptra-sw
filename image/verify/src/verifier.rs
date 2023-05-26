@@ -17,6 +17,7 @@ use core::num::NonZeroU32;
 use crate::*;
 use caliptra_drivers::*;
 use caliptra_image_types::*;
+use memoffset::offset_of;
 
 const ZERO_DIGEST: ImageDigest = [0u32; SHA384_DIGEST_WORD_SIZE];
 
@@ -329,7 +330,15 @@ impl<Env: ImageVerificationEnv> ImageVerifier<Env> {
     ) -> CaliptraResult<TocInfo<'a>> {
         // Calculate the digest for the header
         let range = ImageManifest::header_range();
-        let digest = self
+        let vendor_header_len = offset_of!(ImageHeader, owner_data);
+
+        // Vendor header digest is calculated up to the owner_data field.
+        let digest_vendor = self
+            .env
+            .sha384_digest(range.start, vendor_header_len as u32)
+            .map_err(|_| err_u32!(HeaderDigestFailure))?;
+
+        let digest_owner = self
             .env
             .sha384_digest(range.start, range.len() as u32)
             .map_err(|_| err_u32!(HeaderDigestFailure))?;
@@ -337,7 +346,7 @@ impl<Env: ImageVerificationEnv> ImageVerifier<Env> {
         // Verify vendor signature
         let (pub_key, sig) = info.vendor_info;
         let (lms_pub_key, lms_sig) = info.vendor_lms_info;
-        self.verify_vendor_sig(&digest, pub_key, lms_pub_key, sig, lms_sig)?;
+        self.verify_vendor_sig(&digest_vendor, pub_key, lms_pub_key, sig, lms_sig)?;
 
         // Verify the ECC public key index used verify header signature is encoded
         // in the header
@@ -351,7 +360,7 @@ impl<Env: ImageVerificationEnv> ImageVerifier<Env> {
 
         // Verify owner signature
         if let Some((pub_key, sig)) = info.owner_info {
-            self.verify_owner_sig(&digest, pub_key, sig)?;
+            self.verify_owner_sig(&digest_owner, pub_key, sig)?;
         }
 
         let verif_info = TocInfo {
@@ -532,6 +541,9 @@ impl<Env: ImageVerificationEnv> ImageVerifier<Env> {
             }
         }
 
+        let effective_fuse_svn =
+            Self::effective_fuse_svn(self.env.fmc_svn(), self.env.anti_rollback_disable());
+
         if reason == ResetReason::UpdateReset && actual != self.env.get_fmc_digest_dv() {
             raise_err!(UpdateResetFmcDigestMismatch)
         }
@@ -540,6 +552,7 @@ impl<Env: ImageVerificationEnv> ImageVerifier<Env> {
             load_addr: verify_info.load_addr,
             entry_point: verify_info.entry_point,
             svn: verify_info.svn,
+            effective_fuse_svn,
             digest: verify_info.digest,
             size: verify_info.size,
         };
@@ -593,10 +606,14 @@ impl<Env: ImageVerificationEnv> ImageVerifier<Env> {
             }
         }
 
+        let effective_fuse_svn =
+            Self::effective_fuse_svn(self.env.runtime_svn(), self.env.anti_rollback_disable());
+
         let info = ImageVerificationExeInfo {
             load_addr: verify_info.load_addr,
             entry_point: verify_info.entry_point,
             svn: verify_info.svn,
+            effective_fuse_svn,
             digest: verify_info.digest,
             size: verify_info.size,
         };
@@ -617,6 +634,18 @@ impl<Env: ImageVerificationEnv> ImageVerifier<Env> {
         self.env
             .sha384_digest(range.start, range.len() as u32)
             .map_err(|_| err_u32!(VendorPubKeyDigestFailure))
+    }
+
+    /// Calculates the effective fuse SVN.
+    ///
+    /// If anti-rollback is disabled, the effective fuse-SVN is zero.
+    /// Otherwise, it is SVN-fuses.
+    fn effective_fuse_svn(fuse_svn: u32, anti_rollback_disable: bool) -> u32 {
+        if anti_rollback_disable {
+            0_u32
+        } else {
+            fuse_svn
+        }
     }
 }
 
