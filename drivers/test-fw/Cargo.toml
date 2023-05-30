@@ -10,6 +10,7 @@ edition = "2021"
 caliptra-drivers = { path = "..", features=["emu"] }
 caliptra-registers = { path = "../../registers" }
 caliptra-kat = { path = "../../kat" }
+caliptra-lms-types = { path = "../../lms-types" }
 caliptra-test-harness = { path = "../../test-harness" }
 cfg-if = "1.0.0"
 zerocopy = "0.6.1"
@@ -122,9 +123,4 @@ required-features = ["riscv"]
 [[bin]]
 name = "csrng"
 path = "src/bin/csrng_tests.rs"
-required-features = ["riscv"]
-
-[[bin]]
-name = "test_lms_parsing"
-path = "src/bin/lms_parsing_tests.rs"
 required-features = ["riscv"]

@@ -16,8 +16,9 @@ use caliptra_drivers::*;
 use caliptra_error::caliptra_err_def;
 use caliptra_image_types::*;
 use caliptra_image_verify::ImageVerificationEnv;
+use caliptra_lms_types::{LmsPublicKey, LmsSignature};
 use core::ops::Range;
-use zerocopy::AsBytes;
+use zerocopy::transmute;
 
 use crate::rom_env::RomEnv;
 
@@ -95,12 +96,13 @@ impl<'a> ImageVerificationEnv for &mut RomImageVerificationEnv<'a> {
         for i in 0..digest.len() {
             message[i * 4..][..4].copy_from_slice(&digest[i].to_be_bytes());
         }
-        let lms_public_key = parse_public_contents::<SHA192_DIGEST_WORD_SIZE>(pub_key.as_bytes())?;
-        let lms_sig = parse_signature_contents::<
+        let lms_public_key: LmsPublicKey<SHA192_DIGEST_WORD_SIZE> = transmute!(*pub_key);
+        let lms_sig: LmsSignature<
             SHA192_DIGEST_WORD_SIZE,
             IMAGE_LMS_OTS_P_PARAM,
             IMAGE_LMS_KEY_HEIGHT,
-        >(sig.as_bytes())?;
+        > = transmute!(*sig);
+
         Lms::default().verify_lms_signature(self.sha256, &message, &lms_public_key, &lms_sig)
     }
 
