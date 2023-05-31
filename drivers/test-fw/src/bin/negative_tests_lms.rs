@@ -15,7 +15,7 @@ File contains test cases for LMS signature verification using SHA256/192.
 #![no_std]
 #![no_main]
 
-use caliptra_drivers::{Lms, Sha256};
+use caliptra_drivers::{CaliptraError, Lms, Sha256};
 use caliptra_lms_types::{
     LmotsAlgorithmType, LmotsSignature, LmsAlgorithmType, LmsIdentifier, LmsPublicKey, LmsSignature,
 };
@@ -396,6 +396,81 @@ fn test_failures_lms_24() {
         .verify_lms_signature(&mut sha256, &MESSAGE, &LMS_PUBLIC_KEY, &new_lms_sig)
         .unwrap();
     assert_eq!(should_fail, false);
+
+    // TODO: Use a centralized error-code reference
+    const INVALID_LMS_ALGORITHM_TYPE: u32 = 0xc0001;
+    const INVALID_LMOTS_ALGORITHM_TYPE: u32 = 0xc0002;
+    const INVALID_P_VALUE: u32 = 0xc0004;
+    const INVALID_HASH_WIDTH: u32 = 0xc0005;
+
+    assert_eq!(
+        Lms::default().verify_lms_signature(
+            &mut sha256,
+            &MESSAGE,
+            &new_public_key,
+            &LmsSignature {
+                tree_type: LmsAlgorithmType::new(12345),
+                ..lms_sig
+            }
+        ),
+        Err(CaliptraError(
+            INVALID_LMS_ALGORITHM_TYPE.try_into().unwrap()
+        ))
+    );
+
+    assert_eq!(
+        Lms::default().verify_lms_signature(
+            &mut sha256,
+            &MESSAGE,
+            &new_public_key,
+            &LmsSignature {
+                ots: LmotsSignature {
+                    ots_type: LmotsAlgorithmType::new(23456),
+                    ..lms_sig.ots
+                },
+                ..lms_sig
+            }
+        ),
+        Err(CaliptraError(
+            INVALID_LMOTS_ALGORITHM_TYPE.try_into().unwrap()
+        ))
+    );
+
+    // TODO: Maybe this should just be INVALID_LMOTS_ALGORITHM_TYPE?
+    assert_eq!(
+        Lms::default().verify_lms_signature(
+            &mut sha256,
+            &MESSAGE,
+            &new_public_key,
+            &LmsSignature {
+                ots: LmotsSignature {
+                    ots_type: LmotsAlgorithmType::LmotsSha256N32W4,
+                    ..lms_sig.ots
+                },
+                ..lms_sig
+            }
+        ),
+        Err(CaliptraError(INVALID_P_VALUE.try_into().unwrap()))
+    );
+
+    assert_eq!(
+        Lms::default().verify_lms_signature(
+            &mut sha256,
+            &MESSAGE,
+            &new_public_key,
+            &LmsSignature {
+                q: Q.into(),
+                ots: LmotsSignature {
+                    ots_type: LmotsAlgorithmType::LmotsSha256N32W8,
+                    nonce: NONCE,
+                    y: [Default::default(); 34],
+                },
+                tree_type: LMS_TYPE,
+                tree_path: PATH,
+            }
+        ),
+        Err(CaliptraError(INVALID_HASH_WIDTH.try_into().unwrap()))
+    );
 }
 
 test_suite! {
